@@ -1,0 +1,52 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100vw;
+  height: 100vh;
+  background-color: #282A36;
+  overflow: hidden;
+}
+
+body {
+  background-color: #282A36;
+  color: white;
+}
+
+.sidebar {
+  background-color: #282A36;
+  color: white;
+}
+
+.sidebar-item:hover {
+  background-color: #7B68EE;
+  transition: 0.3s;
+}
+
+.header {
+  background-color: #282A36;
+  border-bottom: 2px solid #7B68EE;
+}
+
+.button {
+  background-color: #7B68EE;
+  color: white;
+  border-radius: 6px;
+}
+
+.button:hover {
+  background-color: #6864F7;
+}
+
+.card {
+  background: #282A36;
+  border: 2px solid rgba(123, 104, 238, 0.4); /* 투명한 테두리 */
+  box-shadow: 0 0 10px rgba(104, 100, 247, 0.3);
+}
+
+.card:hover {
+  box-shadow: 0 0 20px rgba(123, 104, 238, 0.8);
+}
