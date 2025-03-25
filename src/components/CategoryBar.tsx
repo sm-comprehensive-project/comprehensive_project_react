@@ -1,16 +1,12 @@
+// src/components/CategoryBar.tsx
 import React, { useState } from "react";
 import {
-  Toolbar,
-  Typography,
-  InputBase,
   Box,
+  Typography,
   IconButton,
-  Collapse,
   Button,
+  Collapse,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import SettingsIcon from "@mui/icons-material/Settings";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 
@@ -38,9 +34,9 @@ const subCategories: Record<string, string[]> = {
   문화생활: ["도서", "공연티켓", "음반/DVD", "전자책", "굿즈", "정기구독"],
 };
 
-const Header: React.FC = () => {
-  const [isVisible, setIsVisible] = useState(false);
+const CategoryBar: React.FC = () => {
   const [selected, setSelected] = useState<string | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
   const [isSubVisible, setIsSubVisible] = useState(false);
 
   const handleCategoryClick = (label: string) => {
@@ -53,56 +49,9 @@ const Header: React.FC = () => {
   };
 
   return (
-    <Box
-      sx={{
-        position: "sticky", // ✅ 스크롤 해도 상단 고정
-        top: 0,
-        zIndex: 1300,
-        backgroundColor: "#ffffff",
-        borderBottom: "2px solid #FF5722",
-        boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.05)",
-        transition: "all 0.3s ease",
-      }}
-    >
-      {/* 상단 툴바 */}
-      <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-        <Typography variant="h6" sx={{ fontWeight: "bold", color: "#FF5722" }}>
-          LIVE COMMERCE
-        </Typography>
-
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            backgroundColor: "#FFF3E0",
-            padding: "5px 10px",
-            borderRadius: "8px",
-          }}
-        >
-          <SearchIcon sx={{ color: "#FF5722", marginRight: 1 }} />
-          <InputBase
-            placeholder="검색어 입력..."
-            sx={{
-              color: "#212121",
-              width: "200px",
-              "&::placeholder": { color: "rgba(0,0,0,0.4)" },
-            }}
-          />
-        </Box>
-
-        <Box>
-          <IconButton sx={{ color: "#FF6D00" }}>
-            <SettingsIcon />
-          </IconButton>
-          <IconButton sx={{ color: "#FF6D00" }}>
-            <AccountCircleIcon />
-          </IconButton>
-        </Box>
-      </Toolbar>
-
-      {/* 토글 영역 */}
-      <Collapse in={isVisible} timeout="auto">
-        {/* 카테고리 아이콘 */}
+    <Box sx={{ backgroundColor: "#fff", borderBottom: "1px solid #ddd" }}>
+      {/* 펼쳐진 경우 아이콘들 먼저 */}
+      <Collapse in={isVisible}>
         <Box
           sx={{
             display: "flex",
@@ -111,7 +60,6 @@ const Header: React.FC = () => {
             flexWrap: "wrap",
             py: 2,
             backgroundColor: "#fff",
-            borderTop: "1px solid #eee",
             borderBottom: "1px solid #ddd",
           }}
         >
@@ -160,7 +108,7 @@ const Header: React.FC = () => {
           ))}
         </Box>
 
-        {/* 하위 카테고리 버튼 */}
+        {/* 하위 메뉴 */}
         {isSubVisible && selected && subCategories[selected] && (
           <Box
             sx={{
@@ -198,7 +146,7 @@ const Header: React.FC = () => {
         )}
       </Collapse>
 
-      {/* 토글 버튼 */}
+      {/* 항상 보이는 토글 버튼 */}
       <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
         <IconButton
           onClick={() => setIsVisible((prev) => !prev)}
@@ -216,4 +164,4 @@ const Header: React.FC = () => {
   );
 };
 
-export default Header;
+export default CategoryBar;

@@ -1,28 +1,53 @@
+// src/components/Layout.tsx
 import React from "react";
 import { Box } from "@mui/material";
-import Sidebar from "./Sidebar";
 import Header from "./Header";
-import MainContent from "./MainContent";
+import Footer from "./Footer";
 
-const Layout: React.FC = () => {
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
-    <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-      {/* 사이드바 (고정) */}
-      <Box sx={{ width: "250px", backgroundColor: "#1e1e1e", color: "white", flexShrink: 0 }}>
-        <Sidebar />
-      </Box>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "100vh",
+        backgroundColor: "#f5f5f5",
+      }}
+    >
+      <Header /> {/* 고정이 아닌 흐름 속에 들어감 */}
 
-      {/* 메인 컨텐츠 영역 */}
-      <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        {/* 헤더 (고정) */}
-        <Box sx={{ height: "60px", backgroundColor: "#111", color: "white", flexShrink: 0 }}>
-          <Header />
-        </Box>
+<Box
+  sx={{
+    flexGrow: 1,
+    display: "flex",
+    justifyContent: "center",
+    backgroundColor: "#f5f5f5",
+    px: "5vw",         // 양 옆 여백 비율로
+    pt: 0,             // 위 여백 제거
+    transition: "all 0.3s ease",
+  }}
+>
+  <Box
+    sx={{
+      width: "100%",
+      maxWidth: "1200px",
+      backgroundColor: "#fff",
+      borderRadius: 0,
+      padding: 3,
+      boxShadow: 10,
+    }}
+  >
+    {children}
+  </Box>
+</Box>
 
-        {/* 메인 콘텐츠 (스크롤 가능) */}
-        <Box sx={{ flexGrow: 1, overflowY: "auto", backgroundColor: "#000", padding: 3 }}>
-          <MainContent />
-        </Box>
+      {/* Footer */}
+      <Box sx={{ backgroundColor: "#FFF3E0", mt: "auto" }}>
+        <Footer />
       </Box>
     </Box>
   );

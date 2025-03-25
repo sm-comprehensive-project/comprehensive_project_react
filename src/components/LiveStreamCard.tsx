@@ -1,58 +1,73 @@
+// src/components/LiveStreamCard.tsx
 import React from "react";
-import { Card, CardMedia, Typography } from "@mui/material";
+import { CardMedia, Box, Typography, Button } from "@mui/material";
 
-interface LiveStreamCardProps {
-  title: string;
-  thumbnail: string;
-}
-
-const LiveStreamCard: React.FC<LiveStreamCardProps> = ({ title, thumbnail }) => {
+const LiveStreamCard = () => {
   return (
-    <Card
+    <Box
       sx={{
-        backgroundColor: "#282A36", // 다크 테마 유지
-        width: "236px",
-        height: "420px",
-        borderRadius: "12px",
-        padding: "8px",
-        margin: "16px",
-        position: "relative", // 테두리를 위해 추가
-        border: "2px solid rgba(123, 104, 238, 0.4)", // 은은한 보라색 테두리
-        boxShadow: "0 0 15px rgba(104, 100, 247, 0.3)", // 반투명한 그림자 효과
-        transition: "0.3s ease-in-out",
-
-        "&:hover": {
-          transform: "scale(1.05)", // 마우스 올리면 살짝 커지게
-          boxShadow: "0 0 20px rgba(123, 104, 238, 0.8)", // 강조 효과
+        position: "relative",
+        width: 250,
+        height: 300,
+        overflow: "hidden",
+        borderRadius: 2,
+        boxShadow: 3,
+        transition: "transform 0.3s ease",
+        "&:hover .thumb-img": {
+          transform: "scale(1.05)",
+        },
+        "&:hover .hover-overlay": {
+          opacity: 1,
         },
       }}
     >
+      {/* 썸네일 이미지 */}
       <CardMedia
         component="img"
-        image={thumbnail}
-        alt={title}
+        image="/images/streams/stream1.png"
+        alt="썸네일"
+        className="thumb-img"
         sx={{
-          borderRadius: "8px",
-          height: "100%", 
-          objectFit: "cover", // 이미지 비율 유지
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          transition: "transform 0.3s ease",
         }}
       />
-      <Typography
-        variant="subtitle1"
+
+      {/* Hover 시 보여질 오버레이 */}
+      <Box
+        className="hover-overlay"
         sx={{
           position: "absolute",
-          bottom: "10px",
-          left: "10px",
-          color: "#FFF",
-          fontWeight: "bold",
-          background: "rgba(0, 0, 0, 0.5)", // 반투명 배경
-          padding: "4px 8px",
-          borderRadius: "4px",
+          inset: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.4)",
+          color: "#fff",
+          opacity: 0,
+          transition: "opacity 0.3s ease",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
         }}
       >
-        {title}
-      </Typography>
-    </Card>
+        <Typography variant="subtitle1" sx={{ mb: 1 }}>
+          🔴 LIVE 중
+        </Typography>
+        <Button
+          variant="contained"
+          size="small"
+          sx={{
+            backgroundColor: "#FF5722",
+            "&:hover": {
+              backgroundColor: "#e64a19",
+            },
+          }}
+        >
+          방송 보러가기
+        </Button>
+      </Box>
+    </Box>
   );
 };
 

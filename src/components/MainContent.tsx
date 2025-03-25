@@ -15,7 +15,7 @@ const MainContent: React.FC = () => {
   return (
     <Box>
       {/* 카테고리 제목 */}
-      <Typography variant="h6" sx={{ color: "white", mb: 2 }}>
+      <Typography variant="h6" sx={{ color: "#333", mb: 2 }}>
         라이브 커머스 보기
       </Typography>
 
