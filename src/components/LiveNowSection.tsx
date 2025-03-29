@@ -88,7 +88,7 @@ const LiveNowSection = () => {
           🔥 가로형 카드
         </Typography>
         <Box className="swiper-button-prev-1" sx={navStyle}>
-          <ArrowBackIosIcon sx={{ fontSize: 18, ml: "13px" }} />
+          <ArrowBackIosIcon sx={{ fontSize: 18, ml: "7px" }} />
         </Box>
         <Box className="swiper-button-next-1" sx={navStyleRight}>
           <ArrowForwardIosIcon fontSize="small" />
@@ -213,7 +213,7 @@ const LiveNowSection = () => {
           🖼️ 배너형 카드
         </Typography>
         <Box className="swiper-button-prev-3" sx={navStyle}>
-          <ArrowBackIosIcon sx={{ fontSize: 18, ml: "13px" }} />
+          <ArrowBackIosIcon sx={{ fontSize: 18, ml: "7px" }} />
         </Box>
         <Box className="swiper-button-next-3" sx={navStyleRight}>
           <ArrowForwardIosIcon fontSize="small" />

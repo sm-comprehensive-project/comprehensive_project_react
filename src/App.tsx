@@ -12,6 +12,9 @@ import WeeklySchedule from "./pages/WeeklySchedule";
 import StreamPopup2 from "./pages/StreamPopup2";
 import LoginPage from "./pages/LoginPage";
 import AuthPage from "./pages/AuthPage";
+import DailySchedulePage from './pages/DailySchedulePage';
+import DailySchedulePage2 from './pages/DailySchedulePage2';
+
 
 const App: React.FC = () => {
   return (
@@ -25,6 +28,8 @@ const App: React.FC = () => {
         <Route path="/stream3" element={<Layout><StreamDetail3 /></Layout>} />
         <Route path="/stream4" element={<Layout><StreamDetail4 /></Layout>} />
         <Route path="/weeklyschedule" element={<Layout><WeeklySchedule /></Layout>} />
+        <Route path="/dailyschedule" element={<Layout><DailySchedulePage /></Layout>} />
+        <Route path="/dailyschedule2" element={<Layout><DailySchedulePage2 /></Layout>} />
 
         {/* ✅ 레이아웃 없이 보여야 하는 페이지 */}
         <Route path="/streampopup2" element={<StreamPopup2 />} />

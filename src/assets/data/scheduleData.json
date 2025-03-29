@@ -1,0 +1,402 @@
+[
+  {
+    "id": 1,
+    "date": "2025-03-30",
+    "time": "08:00",
+    "title": "모닝커피 특집 라이브",
+    "channel": "카카오",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "morning"
+  },
+  {
+    "id": 2,
+    "date": "2025-03-30",
+    "time": "09:00",
+    "title": "봄 신상 의류 공개",
+    "channel": "네이버",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "morning"
+  },
+  {
+    "id": 3,
+    "date": "2025-03-30",
+    "time": "09:30",
+    "title": "가정용품 할인 라이브",
+    "channel": "11번가",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "morning"
+  },
+  {
+    "id": 4,
+    "date": "2025-03-30",
+    "time": "10:30",
+    "title": "뷰티 아이템 특가",
+    "channel": "CJ",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "morning"
+  },
+  {
+    "id": 5,
+    "date": "2025-03-30",
+    "time": "11:00",
+    "title": "가전제품 타임세일",
+    "channel": "카카오",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "morning"
+  },
+  {
+    "id": 6,
+    "date": "2025-03-30",
+    "time": "12:00",
+    "title": "점심시간 맛집 추천",
+    "channel": "네이버",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "afternoon"
+  },
+  {
+    "id": 7,
+    "date": "2025-03-30",
+    "time": "12:30",
+    "title": "봄맞이 캠핑용품 특집",
+    "channel": "11번가",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "afternoon"
+  },
+  {
+    "id": 8,
+    "date": "2025-03-30",
+    "time": "13:30",
+    "title": "신상 스마트폰 론칭",
+    "channel": "CJ",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "afternoon"
+  },
+  {
+    "id": 9,
+    "date": "2025-03-30",
+    "time": "14:00",
+    "title": "건강식품 할인전",
+    "channel": "카카오",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "afternoon"
+  },
+  {
+    "id": 10,
+    "date": "2025-03-30",
+    "time": "15:00",
+    "title": "명품 브랜드 특가",
+    "channel": "네이버",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "afternoon"
+  },
+  {
+    "id": 11,
+    "date": "2025-03-30",
+    "time": "15:30",
+    "title": "어린이 용품 기획전",
+    "channel": "11번가",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "afternoon"
+  },
+  {
+    "id": 12,
+    "date": "2025-03-30",
+    "time": "16:30",
+    "title": "남성 패션 신상 공개",
+    "channel": "CJ",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "afternoon"
+  },
+  {
+    "id": 13,
+    "date": "2025-03-30",
+    "time": "17:00",
+    "title": "홈트레이닝 용품 특집",
+    "channel": "카카오",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "evening"
+  },
+  {
+    "id": 14,
+    "date": "2025-03-30",
+    "time": "18:00",
+    "title": "주방용품 대전",
+    "channel": "네이버",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "evening"
+  },
+  {
+    "id": 15,
+    "date": "2025-03-30",
+    "time": "19:30",
+    "title": "전자제품 프리미엄 특가",
+    "channel": "11번가",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "evening"
+  },
+  {
+    "id": 16,
+    "date": "2025-03-30",
+    "time": "20:00",
+    "title": "명품 시계 한정 판매",
+    "channel": "CJ",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "evening"
+  },
+  {
+    "id": 17,
+    "date": "2025-03-30",
+    "time": "21:00",
+    "title": "늦은 밤 힐링템 소개",
+    "channel": "카카오",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "night"
+  },
+  {
+    "id": 18,
+    "date": "2025-03-30",
+    "time": "22:00",
+    "title": "디지털기기 야간세일",
+    "channel": "네이버",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "night"
+  },
+  {
+    "id": 19,
+    "date": "2025-03-30",
+    "time": "22:30",
+    "title": "야식 특별 라이브",
+    "channel": "11번가",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "night"
+  },
+  {
+    "id": 20,
+    "date": "2025-03-30",
+    "time": "23:00",
+    "title": "심야 쇼핑 스페셜",
+    "channel": "CJ",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "night"
+  },
+  {
+    "id": 21,
+    "date": "2025-03-31",
+    "time": "08:00",
+    "title": "모닝커피 특집 라이브",
+    "channel": "카카오",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "morning"
+  },
+  {
+    "id": 22,
+    "date": "2025-03-31",
+    "time": "09:00",
+    "title": "봄 신상 의류 공개",
+    "channel": "네이버",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "morning"
+  },
+  {
+    "id": 23,
+    "date": "2025-03-31",
+    "time": "09:30",
+    "title": "가정용품 할인 라이브",
+    "channel": "11번가",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "morning"
+  },
+  {
+    "id": 24,
+    "date": "2025-03-31",
+    "time": "10:30",
+    "title": "뷰티 아이템 특가",
+    "channel": "CJ",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "morning"
+  },
+  {
+    "id": 25,
+    "date": "2025-03-31",
+    "time": "11:00",
+    "title": "가전제품 타임세일",
+    "channel": "카카오",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "morning"
+  },
+  {
+    "id": 26,
+    "date": "2025-03-31",
+    "time": "12:00",
+    "title": "점심시간 맛집 추천",
+    "channel": "네이버",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "afternoon"
+  },
+  {
+    "id": 27,
+    "date": "2025-03-31",
+    "time": "12:30",
+    "title": "봄맞이 캠핑용품 특집",
+    "channel": "11번가",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "afternoon"
+  },
+  {
+    "id": 28,
+    "date": "2025-03-31",
+    "time": "13:30",
+    "title": "신상 스마트폰 론칭",
+    "channel": "CJ",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "afternoon"
+  },
+  {
+    "id": 29,
+    "date": "2025-03-31",
+    "time": "14:00",
+    "title": "건강식품 할인전",
+    "channel": "카카오",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "afternoon"
+  },
+  {
+    "id": 30,
+    "date": "2025-03-31",
+    "time": "15:00",
+    "title": "명품 브랜드 특가",
+    "channel": "네이버",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "afternoon"
+  },
+  {
+    "id": 31,
+    "date": "2025-03-31",
+    "time": "15:30",
+    "title": "어린이 용품 기획전",
+    "channel": "11번가",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "afternoon"
+  },
+  {
+    "id": 32,
+    "date": "2025-03-31",
+    "time": "16:30",
+    "title": "남성 패션 신상 공개",
+    "channel": "CJ",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "afternoon"
+  },
+  {
+    "id": 33,
+    "date": "2025-03-31",
+    "time": "17:00",
+    "title": "홈트레이닝 용품 특집",
+    "channel": "카카오",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "evening"
+  },
+  {
+    "id": 34,
+    "date": "2025-03-31",
+    "time": "18:00",
+    "title": "주방용품 대전",
+    "channel": "네이버",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "evening"
+  },
+  {
+    "id": 35,
+    "date": "2025-03-31",
+    "time": "19:30",
+    "title": "전자제품 프리미엄 특가",
+    "channel": "11번가",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "evening"
+  },
+  {
+    "id": 36,
+    "date": "2025-03-31",
+    "time": "20:00",
+    "title": "명품 시계 한정 판매",
+    "channel": "CJ",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "evening"
+  },
+  {
+    "id": 37,
+    "date": "2025-03-31",
+    "time": "21:00",
+    "title": "늦은 밤 힐링템 소개",
+    "channel": "카카오",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "night"
+  },
+  {
+    "id": 38,
+    "date": "2025-03-31",
+    "time": "22:00",
+    "title": "디지털기기 야간세일",
+    "channel": "네이버",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "night"
+  },
+  {
+    "id": 39,
+    "date": "2025-03-31",
+    "time": "22:30",
+    "title": "야식 특별 라이브",
+    "channel": "11번가",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "night"
+  },
+  {
+    "id": 40,
+    "date": "2025-03-31",
+    "time": "23:00",
+    "title": "심야 쇼핑 스페셜",
+    "channel": "CJ",
+    "thumbnail": "https://img1.kakaocdn.net/thumb/C560x560.q82/?fname=https%3A%2F%2Fst.kakaocdn.net%2Fshoppingstore%2Fproduct%2F20250226164406_af5882d3f85d42089cbb777d59df14bb.jpg",
+    "isLive": false,
+    "block": "night"
+  }
+]
