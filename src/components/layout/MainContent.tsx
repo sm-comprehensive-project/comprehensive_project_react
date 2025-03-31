@@ -1,6 +1,6 @@
 import React from "react";
 import { Grid, Typography, Box } from "@mui/material";
-import LiveStreamCard from "./LiveStreamCard";
+import LiveStreamCard from "../live/LiveStreamCard";
 
 const streamData = [
   { id: 1, title: "방송 1", thumbnail: "/images/streams/stream1.png" },

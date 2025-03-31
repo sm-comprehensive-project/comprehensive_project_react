@@ -6,9 +6,9 @@ import {
   Grid,
   Divider,
 } from '@mui/material';
-import DateSelector from '../components/DateSelector';
-import scheduleData from '../assets/data/scheduleData.json';
-import BroadcastCard from '../components/BroadcastCard2';
+import DateSelector from '../../components/DateSelector';
+import scheduleData from '../../assets/data/scheduleData.json';
+import BroadcastCard from '../../components/BroadcastCard';
 
 const timeBlocks = [
   { label: '오전 (06:00 - 12:00)', key: 'morning' },
@@ -17,7 +17,7 @@ const timeBlocks = [
   { label: '심야 (22:00 - 06:00)', key: 'night' },
 ];
 
-const DailySchedulePage2: React.FC = () => {
+const DailySchedulePage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
 
   const filteredSchedule = scheduleData.filter(
@@ -58,4 +58,4 @@ const DailySchedulePage2: React.FC = () => {
   );
 };
 
-export default DailySchedulePage2;
+export default DailySchedulePage;
