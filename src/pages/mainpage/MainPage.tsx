@@ -1,10 +1,10 @@
 // src/pages/MainPage.tsx
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import LiveNowSection from "../components/LiveNowSection.tsx";
-import UpcomingStreamsSection from "../components/UpcomingStreamsSection.tsx";
-import EventBanner from "../components/EventBanner.tsx";
-import ProductGrid from "../components/ProductGrid.tsx";
+import LiveNowSection from "../../components/live/LiveNowSection.tsx";
+import UpcomingStreamsSection from "../../components/live/UpcomingStreamsSection.tsx";
+import EventBanner from "../../components/EventBanner.tsx";
+import ProductGrid from "../../components/product/ProductGrid.tsx";
 
 const MainPage: React.FC = () => {
   return (

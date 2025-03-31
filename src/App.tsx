@@ -1,17 +1,17 @@
 // src/App.tsx
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Layout from "./components/Layout";
-import MainPage from "./pages/MainPage";
-import MainPage2 from "./pages/MainPage2";
-import StreamDetail from "./pages/StreamDetail";
-import StreamDetail2 from "./pages/StreamDetail2";
-import StreamDetail3 from "./pages/StreamDetail3";
-import StreamDetail4 from "./pages/StreamDetail4";
-import WeeklySchedule from "./pages/WeeklySchedule";
-import StreamPopup2 from "./pages/StreamPopup2";
-import LoginPage from "./pages/LoginPage";
-import AuthPage from "./pages/AuthPage";
+import Layout from "./components/layout/Layout";
+import MainPage from "./pages/mainpage/MainPage";
+import MainPage2 from "./pages/mainpage/MainPage2";
+import StreamDetail from "./pages/StreamDetail/StreamDetail";
+import StreamDetail2 from "./pages/StreamDetail/StreamDetail2";
+import StreamDetail3 from "./pages/StreamDetail/StreamDetail3";
+import StreamDetail4 from "./pages/StreamDetail/StreamDetail4";
+import WeeklySchedule from "./pages/schedule/WeeklySchedule";
+import StreamPopup2 from "./pages/StreamDetail/StreamPopup2";
+import LoginPage from "./pages/user/LoginPage";
+import AuthPage from "./pages/user/AuthPage";
 
 const App: React.FC = () => {
   return (
