@@ -6,7 +6,7 @@ const StreamDetail: React.FC = () => {
   return (
     <Box sx={{ display: "flex", flexDirection: "row", padding: 4, gap: 3 }}>
 
-      {/* 방송 영상 */}
+      {/* 방송 test 영상 */}
       <Box sx={{ flex: "0 0 45%", backgroundColor: "#000", height: "600px", borderRadius: 2 }}>
         {/* 영상 플레이스홀더 */}
         <Typography sx={{ color: "#fff", textAlign: "center", paddingTop: 25 }}>방송 영상 영역</Typography>
