@@ -8,17 +8,45 @@ import {
   Button,
   Typography,
   Paper,
+  Divider,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
+
+import LoginForm from '../../components/auth/LoginForm';
+import SignupForm from '../../components/auth/SignupForm';
 
 const AuthPage: React.FC = () => {
   const [tab, setTab] = useState(0);
   const [loginData, setLoginData] = useState({ username: '', password: '' });
+
   const [signupData, setSignupData] = useState({
     username: '',
+    name: '',
     email: '',
     password: '',
     confirmPassword: '',
+    phone: '',
+    birthdate: '',
+    gender: '',
+    address: '',
+    detailAddress: '',
+    categories: [] as string[],
+    marketingAgree: false,
   });
+
+  const categories: { emoji: string; label: string }[] = [
+    { emoji: "👗", label: "패션" },
+    { emoji: "💄", label: "뷰티" },
+    { emoji: "🥗", label: "푸드" },
+    { emoji: "🪑", label: "라이프" },
+    { emoji: "✈️", label: "여행/체험" },
+    { emoji: "🧸", label: "키즈" },
+    { emoji: "💻", label: "테크" },
+    { emoji: "⛺", label: "취미레저" },
+    { emoji: "🎫", label: "문화생활" },
+  ];
 
   const handleLogin = () => {
     console.log('로그인 정보:', loginData);
@@ -47,6 +75,9 @@ const AuthPage: React.FC = () => {
           p: 4,
           borderRadius: 3,
           backgroundColor: '#ffffff',
+          minHeight: 420, // 💡 최소 높이 설정 (로그인/회원가입 모두 커버할 수 있도록)
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         <Tabs
@@ -60,85 +91,28 @@ const AuthPage: React.FC = () => {
           <Tab label="회원가입" />
         </Tabs>
 
-        {/* 로그인 탭 */}
-        {tab === 0 && (
-          <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              label="아이디"
-              variant="outlined"
-              fullWidth
-              value={loginData.username}
-              onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
+        {/* 공통 영역 감싸기 (탭 내부 컨텐츠) */}
+        <Box sx={{ flex: 1 }}>
+          {tab === 0 && (
+            <LoginForm
+              loginData={loginData}
+              setLoginData={setLoginData}
+              onLogin={handleLogin}
             />
-            <TextField
-              label="비밀번호"
-              type="password"
-              variant="outlined"
-              fullWidth
-              value={loginData.password}
-              onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-            />
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={handleLogin}
-              sx={{
-                backgroundColor: '#FF5722',
-                '&:hover': { backgroundColor: '#E64A19' },
-              }}
-            >
-              로그인하기
-            </Button>
-          </Box>
-        )}
+          )}
 
-        {/* 회원가입 탭 */}
-        {tab === 1 && (
-          <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              label="아이디"
-              variant="outlined"
-              fullWidth
-              value={signupData.username}
-              onChange={(e) => setSignupData({ ...signupData, username: e.target.value })}
+          {tab === 1 && (
+            <SignupForm
+              signupData={signupData}
+              setSignupData={setSignupData}
+              categories={categories}
+              onSignup={handleSignup}
             />
-            <TextField
-              label="이메일"
-              variant="outlined"
-              fullWidth
-              value={signupData.email}
-              onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-            />
-            <TextField
-              label="비밀번호"
-              type="password"
-              variant="outlined"
-              fullWidth
-              value={signupData.password}
-              onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-            />
-            <TextField
-              label="비밀번호 확인"
-              type="password"
-              variant="outlined"
-              fullWidth
-              value={signupData.confirmPassword}
-              onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
-            />
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={handleSignup}
-              sx={{
-                backgroundColor: '#FF5722',
-                '&:hover': { backgroundColor: '#E64A19' },
-              }}
-            >
-              회원가입하기
-            </Button>
-          </Box>
-        )}
+          )}
+
+        </Box>
       </Paper>
+
     </Box>
   );
 };
