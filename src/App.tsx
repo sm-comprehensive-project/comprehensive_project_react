@@ -18,6 +18,7 @@ import DailySchedulePage3 from "./pages/schedule/DailySchedulePage3";
 import DailySchedulePage4 from "./pages/schedule/DailySchedulePage4";
 import DailySchedulePage5 from "./pages/schedule/DailySchedulePage5";
 import DailySchedulePage6 from "./pages/schedule/DailySchedulePage6";
+import TestPage from "./pages/test"; // ✅ 여기 수정
 
 const App: React.FC = () => {
   return (
@@ -42,6 +43,7 @@ const App: React.FC = () => {
         <Route path="/streampopup2" element={<StreamPopup2 />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/AuthPage" element={<AuthPage />} />
+        <Route path="/test" element={<TestPage />} /> 
       </Routes>
     </Router>
   );
