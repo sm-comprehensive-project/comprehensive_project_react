@@ -1,5 +1,6 @@
 // src/App.tsx
 import React from "react";
+import './i18n'; // ✅ 추가
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import MainPage from "./pages/mainpage/MainPage";
