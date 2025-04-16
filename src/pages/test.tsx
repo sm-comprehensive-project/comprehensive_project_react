@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const GOOGLE_API_KEY = 'aaaa'; // 실제 키로 교체
+const GOOGLE_API_KEY = 'aaaa0'; // 실제 키로 교체
 
 const translateText = async (text: string, targetLang: string): Promise<string> => {
   const lang = targetLang.split('-')[0];
