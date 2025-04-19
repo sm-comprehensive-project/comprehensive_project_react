@@ -1,18 +1,13 @@
-import React, { useState } from "react";
-import {
-  Toolbar,
-  Typography,
-  InputBase,
-  Box,
-  IconButton,
-  Collapse,
-  Button,
-} from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import SettingsIcon from "@mui/icons-material/Settings";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+"use client"
+
+import type React from "react"
+import { useState, useRef } from "react"
+import { Toolbar, Typography, InputBase, Box, IconButton, Collapse, Badge, Button, Container } from "@mui/material"
+import SearchIcon from "@mui/icons-material/Search"
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder"
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline"
+import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined"
+import MenuIcon from "@mui/icons-material/Menu"
 
 const categories = [
   { emoji: "👗", label: "패션" },
@@ -24,33 +19,24 @@ const categories = [
   { emoji: "💻", label: "테크" },
   { emoji: "⛺", label: "취미레저" },
   { emoji: "🎫", label: "문화생활" },
-];
-
-const subCategories: Record<string, string[]> = {
-  패션: ["여성의류", "남성의류", "모자", "가방", "신발", "아우터", "데일리룩"],
-  뷰티: ["스킨케어", "메이크업", "향수", "헤어케어", "바디케어", "클렌징"],
-  푸드: ["간편식", "과일/채소", "정육/수산", "간식류", "건강식품", "커피/음료"],
-  라이프: ["홈데코", "주방용품", "청소/세탁", "생활잡화", "수납/정리", "반려동물용품"],
-  "여행/체험": ["호텔패키지", "글램핑", "레저입장권", "공연/전시", "렌터카", "여행가방"],
-  키즈: ["아동의류", "완구", "유아용품", "책/교육", "분유/이유식", "기저귀"],
-  테크: ["스마트폰", "노트북", "가전제품", "게임기", "이어폰/헤드폰", "PC주변기기"],
-  취미레저: ["운동용품", "등산/캠핑", "게임", "악기", "취미DIY", "보드/스케이트"],
-  문화생활: ["도서", "공연티켓", "음반/DVD", "전자책", "굿즈", "정기구독"],
-};
+]
 
 const Header: React.FC = () => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [isSubVisible, setIsSubVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(false)
+  const [selected, setSelected] = useState<string | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   const handleCategoryClick = (label: string) => {
-    if (selected === label) {
-      setIsSubVisible((prev) => !prev);
-    } else {
-      setSelected(label);
-      setIsSubVisible(true);
-    }
-  };
+    setSelected(label === selected ? null : label)
+  }
+
+  const handleMouseEnter = () => {
+    setIsVisible(true)
+  }
+
+  const handleMouseLeave = () => {
+    setIsVisible(false)
+  }
 
   return (
     <Box
@@ -59,161 +45,257 @@ const Header: React.FC = () => {
         top: 0,
         zIndex: 1300,
         backgroundColor: "#ffffff",
-        borderBottom: "2px solid #FF5722",
-        boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.05)",
+        borderBottom: "1px solid #e5e7eb",
+        boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.08)",
         transition: "all 0.3s ease",
       }}
     >
       {/* 상단 툴바 */}
-      <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-        <Typography variant="h6" sx={{ fontWeight: "bold", color: "#FF5722" }}>
-          LIVE COMMERCE
-        </Typography>
-
-        <Box
+      <Container maxWidth="lg">
+        <Toolbar
           sx={{
             display: "flex",
-            alignItems: "center",
-            backgroundColor: "#FFF3E0",
-            padding: "5px 10px",
-            borderRadius: "8px",
+            justifyContent: "space-between",
+            padding: { xs: "0.5rem 0", md: "0.75rem 0" },
+            minHeight: "64px",
           }}
+          disableGutters
         >
-          <SearchIcon sx={{ color: "#FF5722", marginRight: 1 }} />
-          <InputBase
-            placeholder="검색어 입력..."
+          {/* 왼쪽: 로고 */}
+          <Typography
+            variant="h5"
+            component="a"
+            href="/"
             sx={{
-              color: "#212121",
-              width: "200px",
-              "&::placeholder": { color: "rgba(0,0,0,0.4)" },
+              fontWeight: "700",
+              color: "#FF5722",
+              textDecoration: "none",
+              letterSpacing: "0.5px",
+              display: "flex",
+              alignItems: "center",
+              mr: 3,
             }}
-          />
-        </Box>
+          >
+            DAMOA
+          </Typography>
 
-        <Box>
-          <IconButton sx={{ color: "#FF6D00" }}>
-            <SettingsIcon />
-          </IconButton>
-          <IconButton sx={{ color: "#FF6D00" }}>
-            <AccountCircleIcon />
-          </IconButton>
-        </Box>
-      </Toolbar>
-
-      {/* 토글 영역 */}
-      <Collapse in={isVisible} timeout="auto">
-        {/* 카테고리 아이콘 */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            gap: 3,
-            flexWrap: "wrap",
-            py: 2,
-            backgroundColor: "#fff",
-            borderTop: "1px solid #eee",
-            borderBottom: "1px solid #ddd",
-          }}
-        >
-          {categories.map((cat) => (
-            <Box
-              key={cat.label}
+          {/* 메뉴 아이콘 */}
+          <Box
+            ref={menuRef}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              cursor: "pointer",
+              padding: "8px",
+              borderRadius: "4px",
+              transition: "background-color 0.2s",
+              "&:hover": {
+                backgroundColor: "rgba(255, 87, 34, 0.08)",
+              },
+            }}
+          >
+            <MenuIcon
               sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                cursor: "pointer",
-                color: selected === cat.label ? "#FF5722" : "#333",
+                color: "#FF5722",
+                fontSize: "2rem",
               }}
-              onClick={() => handleCategoryClick(cat.label)}
-            >
-              <IconButton
-                sx={{
+            />
+          </Box>
+
+          {/* 중앙: 검색창 */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              backgroundColor: "#f5f5f5",
+              padding: "6px 12px",
+              borderRadius: "8px",
+              width: { xs: "40%", sm: "35%", md: "40%" },
+              maxWidth: "400px",
+              border: "1px solid #eeeeee",
+              transition: "all 0.2s",
+              "&:hover": {
+                backgroundColor: "#f8f8f8",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+              },
+              "&:focus-within": {
+                backgroundColor: "#ffffff",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                border: "1px solid #FF5722",
+              },
+            }}
+          >
+            <SearchIcon sx={{ color: "#9e9e9e", marginRight: 1, fontSize: "1.2rem" }} />
+            <InputBase
+              placeholder="검색어 입력..."
+              sx={{
+                color: "#212121",
+                width: "100%",
+                fontSize: "0.9rem",
+                "&::placeholder": { color: "#9e9e9e", opacity: 0.8 },
+              }}
+            />
+          </Box>
+
+          {/* 오른쪽: 사용자 메뉴 */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1, md: 1.5 } }}>
+            <Button
+              variant="text"
+              sx={{
+                color: "#555",
+                fontSize: "0.85rem",
+                minWidth: { xs: "auto", sm: "auto" },
+                padding: { xs: "4px 6px", sm: "4px 8px" },
+                textTransform: "none",
+                fontWeight: "500",
+                "&:hover": {
                   backgroundColor: "transparent",
-                  width: 56,
-                  height: 56,
-                  borderRadius: "50%",
-                  fontSize: "24px",
-                  transition: "0.2s",
-                  border:
-                    selected === cat.label
-                      ? "2px solid #FF5722"
-                      : "2px solid transparent",
-                  "&:hover": {
-                    backgroundColor: "#FFF3E0",
+                  color: "#FF5722",
+                  textDecoration: "underline",
+                },
+              }}
+            >
+              로그인
+            </Button>
+            <Button
+              variant="text"
+              sx={{
+                color: "#555",
+                fontSize: "0.85rem",
+                minWidth: { xs: "auto", sm: "auto" },
+                padding: { xs: "4px 6px", sm: "4px 8px" },
+                textTransform: "none",
+                fontWeight: "500",
+                "&:hover": {
+                  backgroundColor: "transparent",
+                  color: "#FF5722",
+                  textDecoration: "underline",
+                },
+              }}
+            >
+              회원가입
+            </Button>
+            <IconButton
+              size="small"
+              sx={{
+                color: "#555",
+                padding: "8px",
+                "&:hover": { color: "#FF5722" },
+              }}
+            >
+              <FavoriteBorderIcon sx={{ fontSize: "1.2rem" }} />
+            </IconButton>
+            <IconButton
+              size="small"
+              sx={{
+                color: "#555",
+                padding: "8px",
+                "&:hover": { color: "#FF5722" },
+              }}
+            >
+              <PersonOutlineIcon sx={{ fontSize: "1.2rem" }} />
+            </IconButton>
+            <IconButton
+              size="small"
+              sx={{
+                color: "#555",
+                padding: "8px",
+                "&:hover": { color: "#FF5722" },
+              }}
+            >
+              <Badge
+                badgeContent={0}
+                showZero={false}
+                sx={{
+                  "& .MuiBadge-badge": {
+                    backgroundColor: "#22c55e",
+                    color: "white",
+                    fontWeight: "bold",
+                    minWidth: "18px",
+                    height: "18px",
+                    fontSize: "0.7rem",
                   },
                 }}
               >
-                {cat.emoji}
-              </IconButton>
-              <Typography
-                variant="body2"
-                sx={{
-                  mt: 1,
-                  fontWeight: selected === cat.label ? "bold" : "normal",
-                  color: selected === cat.label ? "#FF5722" : "#333",
-                }}
-              >
-                {cat.label}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
+                <ShoppingBagOutlinedIcon sx={{ fontSize: "1.2rem" }} />
+              </Badge>
+            </IconButton>
+          </Box>
+        </Toolbar>
+      </Container>
 
-        {/* 하위 카테고리 버튼 */}
-        {isSubVisible && selected && subCategories[selected] && (
+      {/* 토글 영역 */}
+      <Collapse in={isVisible} timeout="auto">
+        <Container maxWidth="lg" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+          {/* 카테고리 아이콘 */}
           <Box
             sx={{
               display: "flex",
               justifyContent: "center",
-              gap: 2,
+              gap: { xs: 2, sm: 3, md: 4 },
               flexWrap: "wrap",
-              py: 1.5,
-              backgroundColor: "#fafafa",
-              borderBottom: "1px solid #eee",
+              py: 3,
+              backgroundColor: "#fff",
+              borderTop: "1px solid #f5f5f5",
+              borderBottom: "1px solid #eeeeee",
             }}
           >
-            {subCategories[selected].map((sub, i) => (
-              <Button
-                key={i}
-                variant="outlined"
-                size="small"
+            {categories.map((cat) => (
+              <Box
+                key={cat.label}
                 sx={{
-                  borderRadius: 20,
-                  textTransform: "none",
-                  fontSize: "0.85rem",
-                  borderColor: "#FF5722",
-                  color: "#FF5722",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  cursor: "pointer",
+                  color: selected === cat.label ? "#FF5722" : "#333",
+                  transition: "transform 0.2s",
                   "&:hover": {
-                    backgroundColor: "#FFF3E0",
-                    borderColor: "#FF6D00",
-                    color: "#FF6D00",
+                    transform: "translateY(-2px)",
                   },
                 }}
+                onClick={() => handleCategoryClick(cat.label)}
               >
-                {sub}
-              </Button>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: { xs: 48, sm: 56 },
+                    height: { xs: 48, sm: 56 },
+                    borderRadius: "50%",
+                    fontSize: { xs: "22px", sm: "24px" },
+                    transition: "all 0.2s",
+                    backgroundColor: selected === cat.label ? "#FFF3E0" : "#f5f5f5",
+                    border: selected === cat.label ? "2px solid #FF5722" : "2px solid transparent",
+                    "&:hover": {
+                      backgroundColor: "#FFF3E0",
+                      border: "2px solid #FFCCBC",
+                    },
+                  }}
+                >
+                  {cat.emoji}
+                </Box>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    mt: 1,
+                    fontSize: "0.85rem",
+                    fontWeight: selected === cat.label ? "600" : "normal",
+                    color: selected === cat.label ? "#FF5722" : "#333",
+                  }}
+                >
+                  {cat.label}
+                </Typography>
+              </Box>
             ))}
           </Box>
-        )}
+        </Container>
       </Collapse>
-
-      {/* 토글 버튼 */}
-      <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
-        <IconButton
-          onClick={() => setIsVisible((prev) => !prev)}
-          sx={{
-            backgroundColor: "#FFF3E0",
-            border: "1px solid #FFCCBC",
-            color: "#FF5722",
-            "&:hover": { backgroundColor: "#FFE0B2" },
-          }}
-        >
-          {isVisible ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-        </IconButton>
-      </Box>
     </Box>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header
