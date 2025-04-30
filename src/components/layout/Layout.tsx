@@ -1,56 +1,63 @@
-// src/components/Layout.tsx
-import React from "react";
-import { Box } from "@mui/material";
-import Header from "./Header";
-import Footer from "./Footer";
+import type React from "react"
+import { Box, CssBaseline } from "@mui/material"
+import Header from "./Header"
+import Footer from "./Footer"
 
 interface LayoutProps {
-  children: React.ReactNode;
+  children: React.ReactNode
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        minHeight: "100vh",
-        backgroundColor: "#f5f5f5",
-      }}
-    >
-      <Header /> {/* 고정이 아닌 흐름 속에 들어감 */}
+    <>
+      <CssBaseline /> {/* 브라우저 기본 마진/패딩 초기화 */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100vh",
+          backgroundColor: "#f5f5f5",
+          margin: 0,
+          padding: 0,
+          width: "100%",
+          maxWidth: "100%",
+          // overflow: "hidden", // 혹시 모를 오버플로우 방지
+        }}
+      >
+        <Header />
 
-<Box
-  sx={{
-    flexGrow: 1,
-    display: "flex",
-    justifyContent: "center",
-    backgroundColor: "#f5f5f5",
-    px: "5vw",         // 양 옆 여백 비율로
-    pt: 0,             // 위 여백 제거
-    transition: "all 0.3s ease",
-  }}
->
-  <Box
-    sx={{
-      width: "100%",
-      maxWidth: "1200px",
-      backgroundColor: "#fff",
-      borderRadius: 0,
-      padding: 3,
-      boxShadow: 10,
-    }}
-  >
-    {children}
-  </Box>
-</Box>
+        <Box
+          sx={{
+            flexGrow: 1,
+            display: "flex",
+            justifyContent: "center",
+            backgroundColor: "#f5f5f5",
+            pt: "64px", // ✅ 수정: paddingTop 추가
+            transition: "all 0.3s ease",
+            width: "100%",
+            margin: 0,
+            padding: 0,
+          }}
+        >
+          <Box
+            sx={{
+              width: "100%",
+              backgroundColor: "#f5f5f5",
+              borderRadius: 0,
+              margin: 0,
+              padding: 0,
+            }}
+          >
+            {children}
+          </Box>
+        </Box>
 
-      {/* Footer */}
-      <Box sx={{ backgroundColor: "#FFF3E0", mt: "auto" }}>
-        <Footer />
+        <Box sx={{ backgroundColor: "#FFF3E0", mt: "auto", width: "100%" }}>
+          <Footer />
+        </Box>
       </Box>
-    </Box>
-  );
-};
+    </>
+  )
+}
 
-export default Layout;
+export default Layout
