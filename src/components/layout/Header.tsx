@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
+  Box,
+  Typography,
   Button,
   InputBase,
   Badge,
   Collapse,
   IconButton,
-  Box,
-  Typography,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
@@ -38,6 +38,35 @@ const dummySearchResults = [
 ];
 
 const Header = () => {
+  const location = useLocation();
+
+  const getThemeStyle = () => {
+    if (location.pathname.startsWith("/weeklyschedule")) {
+      return {
+        color: "#3f51b5",
+        gradient: "linear-gradient(160deg, #FF5722 -40%, #3f51b5 100%)",
+      };
+    }
+    if (location.pathname.startsWith("/tictoc")) {
+      return {
+        color: "#FF0050",
+        gradient: "linear-gradient(135deg, #FE2C55 0%, #00F2EA 100%)",
+      };
+    }
+    if (location.pathname === "/") {
+      return {
+        color: "#62caf0",
+        gradient: "linear-gradient(135deg, #ff5722 0%, #62caf0 100%)",
+      };
+    }
+    return {
+      color: "#FF5722",
+      gradient: "linear-gradient(45deg, #FF5722, #FFC107)",
+    };
+  };
+
+  const { color: themeColor, gradient: themeGradient } = getThemeStyle();
+
   const [searchValue, setSearchValue] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -111,7 +140,7 @@ const Header = () => {
             height: "64px",
           }}
         >
-          {/* 좌측 로고 및 메뉴 */}
+          {/* 로고 & 메뉴 */}
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <Typography
               component={Link}
@@ -119,9 +148,12 @@ const Header = () => {
               sx={{
                 fontWeight: 700,
                 fontSize: "1.5rem",
-                color: "#FF5722",
                 textDecoration: "none",
                 mr: 3,
+                background: themeGradient, // ✅ 변경
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                display: "inline-block",
               }}
             >
               DAMOA
@@ -136,49 +168,45 @@ const Header = () => {
                 cursor: "pointer",
                 p: 1,
                 borderRadius: 1,
-                "&:hover": { backgroundColor: "rgba(255,87,34,0.08)" },
+                "&:hover": { backgroundColor: `${themeColor}10` },
                 mr: 2,
               }}
             >
-              <MenuIcon sx={{ color: "#FF5722", fontSize: "1.5rem" }} />
+              <MenuIcon sx={{ color: themeColor, fontSize: "1.5rem" }} />
             </Box>
 
-            {/* 주요 링크 */}
-            <Box
-              sx={{
-                display: { xs: "none", md: "flex" },
-                alignItems: "center",
-                gap: 2,
-              }}
-            >
+            {/* 네비게이션 */}
+            <Box sx={{ display: { xs: "none", md: "flex" }, gap: 2 }}>
               <Button
                 component={Link}
                 to="/weeklyschedule"
-                startIcon={<CalendarTodayIcon />}
+                startIcon={<CalendarTodayIcon sx={{ fontSize: "1rem" }} />}
                 sx={{
-                  textTransform: "none",
                   color: "#555",
-                  "&:hover": { color: "#FF5722" },
+                  textTransform: "none",
+                  fontWeight: 500,
+                  "&:hover": { color: themeColor },
                 }}
               >
                 편성표
               </Button>
               <Button
                 component={Link}
-                to="/stream"
-                startIcon={<LiveTvIcon />}
+                to="/tictoc"
+                startIcon={<LiveTvIcon sx={{ fontSize: "1rem" }} />}
                 sx={{
-                  textTransform: "none",
                   color: "#555",
-                  "&:hover": { color: "#FF5722" },
+                  textTransform: "none",
+                  fontWeight: 500,
+                  "&:hover": { color: themeColor },
                 }}
               >
-                라이브
+                틱톡
               </Button>
             </Box>
           </Box>
 
-          {/* 중앙 검색창 */}
+          {/* 검색창 */}
           <Box
             ref={searchRef}
             sx={{
@@ -199,18 +227,10 @@ const Header = () => {
                 backgroundColor: isSearchFocused ? "#fff" : "#f5f5f5",
                 p: "8px 12px",
                 borderRadius: isSearchFocused ? "8px 8px 0 0" : "8px",
-                boxShadow: isSearchFocused
-                  ? "0 4px 15px rgba(0,0,0,0.08)"
-                  : "none",
-                transition: "all 0.3s ease",
+                boxShadow: isSearchFocused ? "0 4px 15px rgba(0,0,0,0.08)" : "none",
               }}
             >
-              <SearchIcon
-                sx={{
-                  color: isSearchFocused ? "#FF5722" : "#9e9e9e",
-                  mr: 1,
-                }}
-              />
+              <SearchIcon sx={{ color: isSearchFocused ? themeColor : "#9e9e9e", mr: 1 }} />
               <InputBase
                 inputRef={inputRef}
                 placeholder="검색어 입력..."
@@ -246,9 +266,7 @@ const Header = () => {
                 boxShadow: "0 4px 15px rgba(0,0,0,0.08)",
                 opacity: isSearchFocused ? 1 : 0,
                 visibility: isSearchFocused ? "visible" : "hidden",
-                transform: isSearchFocused
-                  ? "translateY(0)"
-                  : "translateY(-10px)",
+                transform: isSearchFocused ? "translateY(0)" : "translateY(-10px)",
                 transition: "opacity 0.2s, transform 0.2s, visibility 0.2s",
               }}
             >
@@ -268,40 +286,54 @@ const Header = () => {
                   }}
                 >
                   <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <SearchIcon
-                      sx={{
-                        color: "#9e9e9e",
-                        fontSize: "0.9rem",
-                        mr: 1,
-                      }}
-                    />
-                    <Typography variant="body2">{item.text}</Typography>
+                    <SearchIcon sx={{ color: "#9e9e9e", fontSize: "0.9rem", mr: 1 }} />
+                    <Typography
+                      variant="body2"
+                      noWrap
+                      sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
+                    >
+                      {item.text}
+                    </Typography>
                   </Box>
-                  <Badge badgeContent={item.category} color="default" />
+                  <Badge
+                    badgeContent={item.category}
+                    sx={{
+                      "& .MuiBadge-badge": {
+                        backgroundColor: "#f5f5f5",
+                        color: "#333",
+                        fontSize: "0.7rem",
+                        minWidth: "auto",
+                        padding: "0 6px",
+                        height: "20px",
+                      },
+                    }}
+                  />
                 </Box>
               ))}
             </Box>
           </Box>
 
-          {/* 우측 메뉴 */}
+          {/* 사용자 메뉴 */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Button
+              component={Link}
+              to="/auth"
               sx={{
-                textTransform: "none",
-                fontWeight: 500,
                 color: "#555",
-                "&:hover": { color: "#FF5722" },
+                textTransform: "none",
+                fontWeight: "500",
+                "&:hover": { color: themeColor },
               }}
             >
               로그인 / 회원가입
             </Button>
-            <IconButton sx={{ color: "#555", "&:hover": { color: "#FF5722" } }}>
+            <IconButton sx={{ color: "#555", "&:hover": { color: themeColor } }}>
               <FavoriteBorderIcon />
             </IconButton>
-            <IconButton sx={{ color: "#555", "&:hover": { color: "#FF5722" } }}>
+            <IconButton sx={{ color: "#555", "&:hover": { color: themeColor } }}>
               <PersonOutlineIcon />
             </IconButton>
-            <IconButton sx={{ color: "#555", "&:hover": { color: "#FF5722" } }}>
+            <IconButton sx={{ color: "#555", "&:hover": { color: themeColor } }}>
               <Badge badgeContent={0} showZero={false} color="success">
                 <ShoppingBagOutlinedIcon />
               </Badge>
@@ -310,7 +342,7 @@ const Header = () => {
         </Box>
       </Box>
 
-      {/* ✅ 카테고리 토글 - position: absolute로 수정 */}
+      {/* 카테고리 토글 영역 */}
       <Collapse
         in={isVisible}
         timeout="auto"
@@ -347,7 +379,7 @@ const Header = () => {
                 flexDirection: "column",
                 alignItems: "center",
                 cursor: "pointer",
-                color: selected === cat.label ? "#FF5722" : "#333",
+                color: selected === cat.label ? themeColor : "#333",
               }}
             >
               <Box
@@ -356,10 +388,10 @@ const Header = () => {
                   height: 56,
                   borderRadius: "50%",
                   backgroundColor:
-                    selected === cat.label ? "#FFF3E0" : "#f5f5f5",
+                    selected === cat.label ? `${themeColor}10` : "#f5f5f5",
                   border:
                     selected === cat.label
-                      ? "2px solid #FF5722"
+                      ? `2px solid ${themeColor}`
                       : "2px solid transparent",
                   display: "flex",
                   alignItems: "center",
@@ -381,3 +413,4 @@ const Header = () => {
 };
 
 export default Header;
+  

@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
-import { Box, Typography, Container, Paper, Divider, Button, useTheme, useMediaQuery } from "@mui/material"
+import { Box, Typography, Container, Paper, Button, useTheme, useMediaQuery } from "@mui/material"
 import LiveNowSection from "../../components/live/LiveNowSection.tsx"
 import UpcomingStreamsSection from "../../components/live/UpcomingStreamsSection.tsx"
 import EventBanner from "../../components/EventBanner.tsx"
@@ -106,7 +106,7 @@ const MainPage: React.FC = () => {
       {/* 히어로 배너 */}
       <Box
         sx={{
-          background: "linear-gradient(135deg, #FF5722 0%, #FF9800 100%)",
+          background: "linear-gradient(135deg, #ff5722 0%, #62caf0 100%)",
           py: { xs: 6, md: 10 },
           color: "white",
           position: "relative",

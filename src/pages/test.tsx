@@ -61,7 +61,7 @@ const TestPage = () => {
   const { t, i18n } = useTranslation();
 
   useEffect(() => {
-    fetch('http://localhost:8080/damoa/live/40224')
+    fetch('http://localhost:8080/damoa/live/41800')
       .then((res) => res.json())
       .then((json) => setData([json]))
       .catch((err) => console.error('에러 발생:', err))
