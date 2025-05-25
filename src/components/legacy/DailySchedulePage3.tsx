@@ -7,9 +7,9 @@ import {
     Divider,
     Paper,
 } from '@mui/material';
-import DateSelector from '../../components/DateSelector';
+import DateSelector from '../DateSelector';
 import scheduleData from '../../assets/data/scheduleData.json';
-import BroadcastCard from '../../components/BroadcastCard2';
+import BroadcastCard from '../BroadcastCard2';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import customParseFormat from 'dayjs/plugin/customParseFormat';

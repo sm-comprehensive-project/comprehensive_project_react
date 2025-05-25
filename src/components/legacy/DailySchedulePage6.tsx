@@ -9,9 +9,9 @@ import {
     Collapse,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import DateSelector from '../../components/DateSelector';
+import DateSelector from '../DateSelector';
 import scheduleData from '../../assets/data/scheduleData.json';
-import BroadcastCard from '../../components/BroadcastCard2';
+import BroadcastCard from '../BroadcastCard2';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
@@ -37,7 +37,7 @@ const timeBlocks = [...Array(24).keys()].map((hour) => {
     };
 });
 
-const DailySchedulePage5: React.FC = () => {
+const DailySchedulePage6: React.FC = () => {
     const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
     const [expandedBlocks, setExpandedBlocks] = useState<{ [key: string]: boolean }>({});
 
@@ -48,6 +48,8 @@ const DailySchedulePage5: React.FC = () => {
     const filteredSchedule = scheduleData.filter(
         (item) => item.date === selectedDate.format('YYYY-MM-DD')
     );
+
+    const currentTime = dayjs().format('HH:mm');
 
     return (
         <Box sx={{ px: 2, py: 4, maxWidth: 1200, mx: 'auto' }}>
@@ -63,12 +65,24 @@ const DailySchedulePage5: React.FC = () => {
                 if (blockItems.length === 0) return null;
 
                 const isExpanded = expandedBlocks[block.key];
+                const isPastBlock = dayjs(currentTime, 'HH:mm').isAfter(dayjs(block.end, 'HH:mm'));
 
                 return (
-                    <Box key={block.key} sx={{ mb: 4 }}>
+                    <Box
+                        key={block.key}
+                        sx={{
+                            mb: 4,
+                            opacity: isPastBlock ? 0.4 : 1,
+                            filter: isPastBlock ? 'grayscale(0.6)' : 'none',
+                            backgroundColor: isPastBlock ? '#f5f5f5' : 'transparent',
+                            borderRadius: 2,
+                            p: 2,
+                            transition: 'all 0.3s',
+                        }}
+                    >
                         <Typography
                             variant="subtitle2"
-                            sx={{ mb: 1, color: '#888', fontWeight: 500 }}
+                            sx={{ mb: 1, color: '#555', fontWeight: 500 }}
                         >
                             {block.label}
                         </Typography>
@@ -93,15 +107,19 @@ const DailySchedulePage5: React.FC = () => {
                         </Collapse>
 
                         {blockItems.length > 3 && (
-                            <Box sx={{ textAlign: 'center', mt: 1 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
                                 <IconButton
                                     onClick={() => toggleBlock(block.key)}
                                     sx={{
                                         transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
                                         transition: 'transform 0.3s',
+                                        border: '1px solid #ccc',
+                                        borderRadius: '50%',
+                                        width: 36,
+                                        height: 36,
                                     }}
                                 >
-                                    <ExpandMoreIcon />
+                                    <ExpandMoreIcon fontSize="small" />
                                 </IconButton>
                             </Box>
                         )}
@@ -112,4 +130,4 @@ const DailySchedulePage5: React.FC = () => {
     );
 };
 
-export default DailySchedulePage5;
+export default DailySchedulePage6;

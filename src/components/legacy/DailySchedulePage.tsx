@@ -6,9 +6,9 @@ import {
   Grid,
   Divider,
 } from '@mui/material';
-import DateSelector from '../../components/DateSelector';
+import DateSelector from '../DateSelector';
 import scheduleData from '../../assets/data/scheduleData.json';
-import BroadcastCard from '../../components/BroadcastCard';
+import BroadcastCard from '../BroadcastCard';
 
 const timeBlocks = [
   { label: '오전 (06:00 - 12:00)', key: 'morning' },

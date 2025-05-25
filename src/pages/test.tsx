@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const GOOGLE_API_KEY = 'aaaa0'; // 실제 키로 교체
+const GOOGLE_API_KEY = 'AIzaSyBPoYwztyT7hlDmQ6z4XlfANzKqixRK2eM'; // 실제 키로 교체
 
 const translateText = async (text: string, targetLang: string): Promise<string> => {
   const lang = targetLang.split('-')[0];
@@ -61,7 +61,7 @@ const TestPage = () => {
   const { t, i18n } = useTranslation();
 
   useEffect(() => {
-    fetch('http://localhost:8080/damoa/live/41800')
+    fetch('http://localhost:8080/damoa/live/43955')
       .then((res) => res.json())
       .then((json) => setData([json]))
       .catch((err) => console.error('에러 발생:', err))

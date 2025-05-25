@@ -8,6 +8,7 @@ import AuthPage from "./pages/user/AuthPage";
 import TestPage from "./pages/test";
 import Tictoc from "./pages/tictoc"; // ✅ 추가
 import VideoTest from "./pages/videotest"; // ✅ 추가
+import Watch from "./pages/StreamDetail/watch"
 
 const App: React.FC = () => {
   return (
@@ -19,7 +20,7 @@ const App: React.FC = () => {
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/test" element={<TestPage />} />
         <Route path="/videotest" element={<Layout><VideoTest /></Layout>} /> {/* ✅ 테스트용 추가 */}
-        <Route path="/videotest" element={<Layout><VideoTest /></Layout>} /> {/* ✅ 테스트용 추가 */}
+        <Route path="/watch" element={<Layout><Watch/></Layout>} /> {/* ✅ 테스트용 추가 */}
 
       </Routes>
     </Router>

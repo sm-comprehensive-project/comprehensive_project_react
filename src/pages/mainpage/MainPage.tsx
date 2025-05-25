@@ -2,13 +2,15 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
-import { Box, Typography, Container, Paper, Button, useTheme, useMediaQuery } from "@mui/material"
+import { Box, Typography, Container, Paper, Button, } from "@mui/material"
 import LiveNowSection from "../../components/live/LiveNowSection.tsx"
 import UpcomingStreamsSection from "../../components/live/UpcomingStreamsSection.tsx"
 import EventBanner from "../../components/EventBanner.tsx"
 import ProductGrid from "../../components/product/ProductGrid.tsx"
-import LiveNowSection2 from "../../components/live/LiveNowSection2.tsx"
+//import LiveNowSection2 from "../../components/live/LiveNowSection2.tsx"
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward"
+import HeroBanner from "../../components/HeroBanner";
+import LiveNowRecommendSection from "../../components/recommend/LiveNowRecommendSection.tsx"
 
 interface SellerInfo {
   name: string
@@ -26,7 +28,6 @@ interface LiveDataRaw {
   liveUrl: string
 }
 
-// 섹션 제목 컴포넌트
 const SectionTitle: React.FC<{ icon: string; title: string; viewAll?: boolean }> = ({
   icon,
   title,
@@ -67,7 +68,6 @@ const SectionTitle: React.FC<{ icon: string; title: string; viewAll?: boolean }>
   </Box>
 )
 
-// 섹션 래퍼 컴포넌트
 const SectionWrapper: React.FC<{ children: React.ReactNode; bgColor?: string }> = ({
   children,
   bgColor = "#ffffff",
@@ -87,8 +87,8 @@ const SectionWrapper: React.FC<{ children: React.ReactNode; bgColor?: string }> 
 const MainPage: React.FC = () => {
   const [liveData, setLiveData] = useState<LiveDataRaw[]>([])
   const [loading, setLoading] = useState(true)
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+  //const theme = useTheme()
+  //const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
 
   useEffect(() => {
     fetch("http://localhost:8080/damoa/live/summary")
@@ -102,120 +102,26 @@ const MainPage: React.FC = () => {
 
   return (
     <Box sx={{ backgroundColor: "#f8f9fa", minHeight: "100vh" }}>
+      <HeroBanner />
 
-      {/* 히어로 배너 */}
-      <Box
-        sx={{
-          background: "linear-gradient(135deg, #ff5722 0%, #62caf0 100%)",
-          py: { xs: 6, md: 10 },
-          color: "white",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <Container maxWidth="lg">
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Box sx={{ maxWidth: { xs: "100%", md: "50%" }, mb: { xs: 4, md: 0 } }}>
-              <Typography
-                variant="h2"
-                sx={{
-                  fontWeight: "800",
-                  mb: 2,
-                  fontSize: { xs: "2rem", sm: "2.5rem", md: "3rem" },
-                  textShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                }}
-              >
-                DAMOA 라이브 쇼핑
-              </Typography>
-              <Typography
-                variant="h6"
-                sx={{
-                  mb: 3,
-                  fontWeight: "400",
-                  opacity: 0.9,
-                  fontSize: { xs: "1rem", sm: "1.1rem" },
-                }}
-              >
-                지금 라이브로 쇼핑하고 특별한 혜택을 받아보세요!
-                <br />
-                다양한 브랜드의 실시간 라이브 방송을 한 곳에서 만나보세요.
-              </Typography>
-              <Button
-                variant="contained"
-                size="large"
-                sx={{
-                  backgroundColor: "white",
-                  color: "#FF5722",
-                  fontWeight: "bold",
-                  px: 4,
-                  py: 1.5,
-                  borderRadius: 2,
-                  boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-                  "&:hover": {
-                    backgroundColor: "#f5f5f5",
-                    boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
-                  },
-                  fontSize: { xs: "0.9rem", sm: "1rem" },
-                }}
-              >
-                라이브 보러가기
-              </Button>
-            </Box>
-            <Box
-              sx={{
-                width: { xs: "100%", md: "45%" },
-                height: { xs: "200px", sm: "250px", md: "300px" },
-                backgroundColor: "rgba(255,255,255,0.2)",
-                borderRadius: "16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-                backdropFilter: "blur(5px)",
-                border: "1px solid rgba(255,255,255,0.3)",
-              }}
-            >
-              <Typography variant="h5" sx={{ color: "white", fontWeight: "500" }}>
-                라이브 쇼핑 배너
-              </Typography>
-            </Box>
-          </Box>
-        </Container>
-
-        {/* 배경 장식 요소 */}
-        <Box
+      {/* 실시간 추천 방송 */}
+      <SectionWrapper>
+        <SectionTitle icon="🔥" title="지금 실시간 방송" />
+        <Paper
+          elevation={0}
           sx={{
-            position: "absolute",
-            width: "300px",
-            height: "300px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)",
-            top: "-100px",
-            right: "-100px",
+            borderRadius: "16px",
+            overflow: "hidden",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+            p: { xs: 2, sm: 3 },
           }}
-        />
-        <Box
-          sx={{
-            position: "absolute",
-            width: "200px",
-            height: "200px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)",
-            bottom: "-50px",
-            left: "10%",
-          }}
-        />
-      </Box>
+        >
+          <LiveNowRecommendSection />
+        </Paper>
+      </SectionWrapper>
 
       {/* 실시간 인기 방송 */}
-      <SectionWrapper>
+      <SectionWrapper bgColor="#f8f9fa">
         <SectionTitle icon="🔥" title="실시간 인기 방송" />
         <Paper
           elevation={0}
@@ -227,22 +133,6 @@ const MainPage: React.FC = () => {
           }}
         >
           {!loading && <LiveNowSection data={liveData} />}
-        </Paper>
-      </SectionWrapper>
-
-      {/* 실시간 인기 방송 2 */}
-      <SectionWrapper bgColor="#f8f9fa">
-        <SectionTitle icon="🔥" title="실시간 인기 방송 2" />
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: "16px",
-            overflow: "hidden",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-            p: { xs: 2, sm: 3 },
-          }}
-        >
-          {!loading && <LiveNowSection2 data={liveData} />}
         </Paper>
       </SectionWrapper>
 
@@ -293,10 +183,8 @@ const MainPage: React.FC = () => {
           <ProductGrid />
         </Paper>
       </SectionWrapper>
-
-      
     </Box>
   )
 }
 
-export default MainPage
+export default MainPage;

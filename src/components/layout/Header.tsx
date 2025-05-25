@@ -69,15 +69,26 @@ const Header = () => {
 
   const [searchValue, setSearchValue] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const categoryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
         setIsSearchFocused(false);
+      }
+
+      if (
+        categoryRef.current &&
+        !categoryRef.current.contains(event.target as Node)
+      ) {
+        setIsCategoryOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -88,8 +99,7 @@ const Header = () => {
     setSelected(label === selected ? null : label);
   };
 
-  const handleMouseEnter = () => setIsVisible(true);
-  const handleMouseLeave = () => setIsVisible(false);
+  const toggleCategory = () => setIsCategoryOpen((prev) => !prev);
   const handleSearchFocus = () => {
     setIsSearchFocused(true);
     inputRef.current?.focus();
@@ -150,7 +160,7 @@ const Header = () => {
                 fontSize: "1.5rem",
                 textDecoration: "none",
                 mr: 3,
-                background: themeGradient, // ✅ 변경
+                background: themeGradient,
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 display: "inline-block",
@@ -160,8 +170,7 @@ const Header = () => {
             </Typography>
 
             <Box
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
+              onClick={toggleCategory}
               sx={{
                 display: "flex",
                 alignItems: "center",
@@ -344,9 +353,10 @@ const Header = () => {
 
       {/* 카테고리 토글 영역 */}
       <Collapse
-        in={isVisible}
+        in={isCategoryOpen}
         timeout="auto"
         unmountOnExit
+        ref={categoryRef}
         sx={{
           position: "absolute",
           top: "100%",
@@ -413,4 +423,3 @@ const Header = () => {
 };
 
 export default Header;
-  
