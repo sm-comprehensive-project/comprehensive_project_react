@@ -81,25 +81,21 @@ const Header = () => {
   const categoryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const storedUser = sessionStorage.getItem("user");
+    if (storedUser) {
       try {
-        const response = await fetch("http://localhost:8088/api/user/me", {
-          method: "GET",
-          credentials: "include", // ✅ 세션 쿠키 포함
-        });
-        const result = await response.json();
-        if (result.success) {
-          setUser(result.user);
-        } else {
-          setUser(null);
-        }
+        const parsedUser = JSON.parse(storedUser);
+        console.log("🟢 세션에서 유저 정보 확인:", parsedUser);
+        setUser(parsedUser);
       } catch (err) {
-        console.error("fetchUser error", err); // ✅ 이렇게 써서 err 사용하게 만들기
+        console.warn("❌ 세션 유저 파싱 실패:", err);
         setUser(null);
       }
-    };
+    } else {
+      console.log("⚠️ 세션에 유저 없음 (로그아웃 상태)");
+      setUser(null);
+    }
 
-    fetchUser();
     const handleClickOutside = (event: MouseEvent) => {
       if (
         searchRef.current &&
@@ -115,6 +111,7 @@ const Header = () => {
         setIsCategoryOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);

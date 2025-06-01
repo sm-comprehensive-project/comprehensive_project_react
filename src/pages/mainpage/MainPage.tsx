@@ -133,21 +133,11 @@ const MainPage: React.FC = () => {
       {/* 실시간 인기 방송 */}
       <SectionWrapper bgColor="#f8f9fa">
         <SectionTitle icon="🔥" title="실시간 인기 방송" />
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: "16px",
-            overflow: "hidden",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-            p: { xs: 2, sm: 3 },
-          }}
-        >
-          {!loading && <LiveNowSection data={liveData} />}
-        </Paper>
+        <LiveNowSection data={liveData} />
       </SectionWrapper>
 
       {/* 예정된 방송 */}
-      <SectionWrapper>
+      {/* <SectionWrapper>
         <SectionTitle icon="📅" title="오늘의 라이브 예정" />
         <Paper
           elevation={0}
@@ -160,10 +150,10 @@ const MainPage: React.FC = () => {
         >
           <UpcomingStreamsSection />
         </Paper>
-      </SectionWrapper>
+      </SectionWrapper> */}
 
       {/* 이벤트 배너 */}
-      <SectionWrapper bgColor="#f8f9fa">
+      {/* <SectionWrapper bgColor="#f8f9fa">
         <SectionTitle icon="💥" title="이벤트 & 프로모션" />
         <Paper
           elevation={0}
@@ -176,10 +166,10 @@ const MainPage: React.FC = () => {
         >
           <EventBanner />
         </Paper>
-      </SectionWrapper>
+      </SectionWrapper> */}
 
       {/* 추천 상품 피드 */}
-      <SectionWrapper>
+      {/* <SectionWrapper>
         <SectionTitle icon="🛍️" title="추천 상품" />
         <Paper
           elevation={0}
@@ -192,7 +182,7 @@ const MainPage: React.FC = () => {
         >
           <ProductGrid />
         </Paper>
-      </SectionWrapper>
+      </SectionWrapper> */}
     </Box>
   );
 };

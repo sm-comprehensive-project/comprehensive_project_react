@@ -60,46 +60,62 @@ const AuthPage: React.FC = () => {
   const [loginSuccess, setLoginSuccess] = useState("");
 
   const handleLogin = async () => {
+    console.log("📥 로그인 시도 시작");
+
     try {
+      // 초기화
       setLoginError("");
       setLoginSuccess("");
-
-      const query = new URLSearchParams({
+      console.log("📦 전송할 로그인 데이터:", {
         email: loginData.username,
         password: loginData.password,
       });
 
-      const response = await fetch(
-        `http://localhost:8088/api/user/login?${query}`,
-        {
-          method: "POST",
-          credentials: "include", // ✅ 세션 유지
-        }
-      );
+      // 로그인 요청
+      const response = await fetch("http://localhost:8088/api/user/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: loginData.username,
+          password: loginData.password,
+        }),
+      });
+
+      // 응답 수신
+      console.log("📡 응답 수신됨. 상태 코드:", response.status);
+      console.log("📡 응답 헤더:", [...response.headers.entries()]);
 
       const result = await response.json();
-      console.log("🟢 로그인 응답:", result); // ✅ 콘솔 출력 추가
+      console.log("🟢 응답 본문(JSON):", result);
 
       if (result.success) {
-        const meResponse = await fetch("http://localhost:8088/api/user/me", {
-          method: "GET",
-          credentials: "include",
-        });
+        if (result.user) {
+          console.log("✅ 로그인 성공. 사용자 정보:", result.user);
 
-        const meResult = await meResponse.json();
-        console.log("🟢 /me 응답:", meResult); // ✅ 이것도 같이 추가하면 좋음
+          // 세션 스토리지 저장
+          sessionStorage.setItem("user", JSON.stringify(result.user));
+          console.log(
+            "💾 sessionStorage 저장됨:",
+            sessionStorage.getItem("user")
+          );
 
-        if (meResult.success) {
           setLoginSuccess("로그인 성공! 메인 페이지로 이동합니다.");
-          setTimeout(() => navigate("/"), 1000);
+          setTimeout(() => {
+            console.log("➡️ 페이지 이동: /");
+            navigate("/");
+          }, 1000);
         } else {
-          setLoginError("세션 유저 정보 확인 실패");
+          console.warn("⚠️ 로그인 성공했지만 사용자 정보가 없음");
+          setLoginError("사용자 정보가 응답에 없습니다.");
         }
       } else {
+        console.warn("❌ 로그인 실패:", result.message);
         setLoginError("로그인 실패: " + result.message);
       }
     } catch (err) {
-      console.error("❌ 로그인 오류:", err);
+      console.error("🚨 예외 발생:", err);
       setLoginError("로그인 중 오류가 발생했습니다.");
     }
   };

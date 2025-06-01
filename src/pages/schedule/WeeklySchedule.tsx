@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import { Calendar, Tv, Bell, Heart, HeartOff } from "lucide-react";
+import { Calendar, Tv, Heart, HeartOff } from "lucide-react";
 import {
   Box,
   Typography,
@@ -12,11 +12,11 @@ import {
   Tabs,
   Tab,
   ButtonGroup,
-  IconButton
+  IconButton,
 } from "@mui/material";
 import dayjs from "dayjs";
 
-// 🔷 타입 정의 추가
+// 🔷 타입 정의
 type ScheduleCardItem = {
   id: number;
   title: string;
@@ -31,6 +31,7 @@ type ScheduleCardItem = {
 };
 
 type LiveApiResponseItem = {
+  id: string;
   liveId: string;
   live: boolean;
   lastUpdated: string;
@@ -51,10 +52,17 @@ type LiveApiResponseItem = {
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   const days = ["일", "월", "화", "수", "목", "금", "토"];
-  return `${date.getMonth() + 1}월 ${date.getDate()}일 (${days[date.getDay()]})`;
+  return `${date.getMonth() + 1}월 ${date.getDate()}일 (${
+    days[date.getDay()]
+  })`;
 };
 
-const generateDateRange = () => Array.from({ length: 5 }, (_, i) => dayjs().add(i - 1, "day").format("YYYY-MM-DD"));
+const generateDateRange = () =>
+  Array.from({ length: 5 }, (_, i) =>
+    dayjs()
+      .add(i - 1, "day")
+      .format("YYYY-MM-DD")
+  );
 
 const getDateLabel = (dateString: string) => {
   const today = new Date();
@@ -69,12 +77,21 @@ const SchedulePage: React.FC = () => {
   const today = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(today);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [platformFilter, setPlatformFilter] = useState<"all" | "kakao" | "naver">("all");
-  const [kakaoScheduleData, setKakaoScheduleData] = useState<ScheduleCardItem[]>([]);
-  const [naverScheduleData, setNaverScheduleData] = useState<ScheduleCardItem[]>([]);
+  const [platformFilter, setPlatformFilter] = useState<
+    "all" | "kakao" | "naver"
+  >("all");
+  const [kakaoScheduleData, setKakaoScheduleData] = useState<
+    ScheduleCardItem[]
+  >([]);
+  const [naverScheduleData, setNaverScheduleData] = useState<
+    ScheduleCardItem[]
+  >([]);
   const [likedIds, setLikedIds] = useState<string[]>([]);
 
-  const transformData = (items: LiveApiResponseItem[], platform: "kakao" | "naver") =>
+  const transformData = (
+    items: LiveApiResponseItem[],
+    platform: "kakao" | "naver"
+  ) =>
     items.map((item, index) => {
       const dateStr = item.dates?.[0] || new Date().toISOString();
       const date = new Date(dateStr);
@@ -83,33 +100,46 @@ const SchedulePage: React.FC = () => {
         title: item.title,
         time: dayjs(date).format("HH:mm"),
         date: dayjs(date).format("YYYY-MM-DD"),
-        channel: item.seller ?? "알 수 없음",
+        channel: item.seller ?? item.sellerInfo?.name ?? "알 수 없음",
         thumbnail: item.thumbnail,
         isNew: index < 3,
         category: "기타",
         platform,
-        liveId: item.liveId,
+        liveId: item.liveId || item.id,
       };
     });
 
   const fetchData = async () => {
-    const kakaoRes = await fetch("http://localhost:8088/damoa/schedule/kakao");
-    const naverRes = await fetch("http://localhost:8088/damoa/schedule/naver");
-    const kakaoData = await kakaoRes.json();
-    const naverData = await naverRes.json();
-    setKakaoScheduleData(transformData(kakaoData, "kakao"));
-    setNaverScheduleData(transformData(naverData, "naver"));
+    try {
+      const [kakaoRes, naverRes] = await Promise.all([
+        fetch("http://localhost:8088/damoa/schedule/kakao"),
+        fetch("http://localhost:8088/damoa/schedule/naver"),
+      ]);
+      const [kakaoData, naverData] = await Promise.all([
+        kakaoRes.json(),
+        naverRes.json(),
+      ]);
+      setKakaoScheduleData(transformData(kakaoData, "kakao"));
+      setNaverScheduleData(transformData(naverData, "naver"));
+    } catch (err) {
+      console.error("스케줄 데이터 불러오기 실패:", err);
+    }
   };
 
   const fetchLikes = async (email: string) => {
     try {
-      const res = await fetch(`http://localhost:8088/api/user/likes?email=${email}`);
-      if (res.ok) {
-        const data = await res.json();
-        setLikedIds(data);
+      const res = await fetch(
+        `http://localhost:8088/api/user/likes?email=${email}`
+      );
+      const result = await res.json();
+      if (result.success && Array.isArray(result.liked)) {
+        setLikedIds(result.liked);
+      } else {
+        setLikedIds([]);
       }
     } catch (err) {
-      console.error("찜 목록 요청 실패:", err);
+      console.error("찜 목록 조회 오류:", err);
+      setLikedIds([]);
     }
   };
 
@@ -118,28 +148,11 @@ const SchedulePage: React.FC = () => {
     const storedUser = sessionStorage.getItem("user");
     if (storedUser) {
       try {
-        const { email } = JSON.parse(storedUser);
-        fetchLikes(email);
-      } catch (e) {
-        console.error("유저 파싱 오류:", e);
+        const user = JSON.parse(storedUser);
+        if (user?.email) fetchLikes(user.email);
+      } catch (err) {
+        console.error("세션 파싱 실패:", err);
       }
-    } else {
-      fetch("http://localhost:8088/api/user/me", {
-        credentials: "include",
-      })
-        .then(res => {
-          if (!res.ok) throw new Error("인증 실패");
-          return res.json();
-        })
-        .then(data => {
-          if (data.success && data.user?.email) {
-            sessionStorage.setItem("user", JSON.stringify(data.user));
-            fetchLikes(data.user.email);
-          }
-        })
-        .catch(err => {
-          console.warn("로그인 정보 없음 또는 인증 실패:", err.message);
-        });
     }
   }, []);
 
@@ -152,29 +165,37 @@ const SchedulePage: React.FC = () => {
     const { email } = JSON.parse(storedUser);
     const isLiked = likedIds.includes(liveId);
     const url = `http://localhost:8088/api/user/like/${liveId}?email=${email}`;
-    const res = await fetch(url, { method: isLiked ? "DELETE" : "POST" });
-    if (res.ok) {
-      setLikedIds(prev => isLiked ? prev.filter(id => id !== liveId) : [...prev, liveId]);
-    } else {
-      alert("찜 상태 변경 실패");
+    try {
+      const res = await fetch(url, {
+        method: isLiked ? "DELETE" : "POST",
+      });
+      if (res.ok) {
+        setLikedIds((prev) =>
+          isLiked ? prev.filter((id) => id !== liveId) : [...prev, liveId]
+        );
+      } else {
+        alert("찜 상태 변경 실패");
+      }
+    } catch (err) {
+      console.error("찜 토글 실패:", err);
     }
   };
 
   const filteredScheduleData = useMemo(() => {
     let combined = [...kakaoScheduleData, ...naverScheduleData];
     if (platformFilter !== "all") {
-      combined = combined.filter(item => item.platform === platformFilter);
+      combined = combined.filter((item) => item.platform === platformFilter);
     }
     return combined;
   }, [platformFilter, kakaoScheduleData, naverScheduleData]);
 
   const groupedSchedule = useMemo(() => {
     const grouped: Record<string, ScheduleCardItem[]> = {};
-    filteredScheduleData.forEach(item => {
+    filteredScheduleData.forEach((item) => {
       if (!grouped[item.date]) grouped[item.date] = [];
       grouped[item.date].push(item);
     });
-    Object.keys(grouped).forEach(date => {
+    Object.keys(grouped).forEach((date) => {
       grouped[date].sort((a, b) => a.time.localeCompare(b.time));
     });
     return grouped;
@@ -183,6 +204,7 @@ const SchedulePage: React.FC = () => {
   const handleAlertClick = (item: ScheduleCardItem) => {
     alert(`${item.title} 방송 알림 설정 완료!`);
   };
+
   return (
     <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       {/* 상단 헤더 */}
@@ -361,22 +383,25 @@ const SchedulePage: React.FC = () => {
                     </Box>
                   </Box>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleAlertClick(item)}
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
                     >
-                      <Bell size={16} />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleLikeToggle(item.liveId)}
-                    >
-                      {likedIds.includes(item.liveId) ? (
-                        <Heart size={16} color="red" />
-                      ) : (
-                        <HeartOff size={16} />
-                      )}
-                    </IconButton>
+                      <IconButton
+                        onClick={() => {
+                          console.log(
+                            "🛠️ handleLikeToggle 클릭됨 - item:",
+                            item
+                          );
+                          handleLikeToggle(item.liveId);
+                        }}
+                      >
+                        {likedIds.includes(item.liveId) ? (
+                          <Heart color="red" />
+                        ) : (
+                          <HeartOff />
+                        )}
+                      </IconButton>
+                    </Box>
                   </Box>
                 </Box>
               ) : (
@@ -476,19 +501,18 @@ const SchedulePage: React.FC = () => {
                         sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
                       >
                         <IconButton
-                          size="small"
-                          onClick={() => handleAlertClick(item)}
-                        >
-                          <Bell size={16} />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleLikeToggle(item.liveId)}
+                          onClick={() => {
+                            console.log(
+                              "🛠️ handleLikeToggle 클릭됨 - item:",
+                              item
+                            );
+                            handleLikeToggle(item.liveId);
+                          }}
                         >
                           {likedIds.includes(item.liveId) ? (
-                            <Heart size={16} color="red" />
+                            <Heart color="red" />
                           ) : (
-                            <HeartOff size={16} />
+                            <HeartOff />
                           )}
                         </IconButton>
                       </Box>
