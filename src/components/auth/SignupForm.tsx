@@ -491,26 +491,22 @@ const SignupForm: React.FC<SignupFormProps> = ({
                 birthDate: signupData.birthdate,
                 interestedCategories: signupData.categories ?? [],
               };
-              console.log("회원가입 데이터:", signupInfo);
+              alert("보낼 회원가입 정보:\n" + JSON.stringify(signupInfo, null, 2));
               try {
-                const response = await axios.post(
-                  "/api/user/register",
-                  signupInfo
-                );
+                const response = await axios.post("http://localhost:8088/api/user/register", signupInfo);
+                alert("✅ 회원가입 성공:\n" + JSON.stringify(response.data, null, 2));
                 console.log("✅ 회원가입 성공:", response.data);
-                onSignup(); // 이후 페이지 이동 또는 상태 처리
+                onSignup();
               } catch (err: unknown) {
                 const axiosError = err as AxiosError<{ message: string }>;
-
+                let message = "회원가입 중 오류가 발생했습니다. 다시 시도해주세요.";
                 if (axiosError.response?.status === 409) {
-                  setError("이미 가입된 이메일입니다.");
+                  message = "이미 가입된 이메일입니다.";
                 } else if (axiosError.response?.data?.message) {
-                  setError(axiosError.response.data.message);
-                } else {
-                  setError(
-                    "회원가입 중 오류가 발생했습니다. 다시 시도해주세요."
-                  );
+                  message = axiosError.response.data.message;
                 }
+                setError(message);
+                alert(message);
               }
             }}
             startIcon={<Check size={18} />}

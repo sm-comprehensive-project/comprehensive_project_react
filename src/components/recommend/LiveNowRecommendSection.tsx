@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -10,52 +10,41 @@ import {
 } from "@mui/material";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
 
-import urlData from "../../assets/data/damoa.kakao_url.json";
-import productData from "../../assets/data/damoa.kakao_product.json";
-
-interface KakaoUrlItem {
-  _id: string;
-  isLive: boolean;
-  isNew: boolean;
-  isVisible: boolean;
-  lastChecked: { $date: string };
-  thumbnail: string;
-  url: string;
+interface Product {
+  name: string;
+  price: number;
+  price_origin: number;
+  discountRate: number;
+  image: string;
 }
 
-interface KakaoProductItem {
+interface SellerInfo {
+  name: string;
+  image: string;
+}
+
+interface LiveProduct {
   liveId: string;
   title: string;
-  thumbnail: string;
   liveUrl: string;
-  sellerInfo: {
-    name: string;
-    image: string;
-  };
-  products: {
-    name: string;
-    price: number;
-    price_origin: number;
-    discountRate: number;
-    image: string;
-  }[];
+  thumbnail: string;
+  isLive: boolean;
+  sellerInfo: SellerInfo;
+  products: Product[];
 }
 
 const LiveNowRecommendSlider: React.FC = () => {
-  const liveList = (urlData as KakaoUrlItem[])
-    .filter((item) => item.isLive && item.isVisible)
-    .map((urlItem) => {
-      const match = (productData as KakaoProductItem[]).find(
-        (p) => p.liveId === urlItem._id
-      );
-      if (!match) return null;
-      return { ...urlItem, ...match };
-    })
-    .filter(Boolean)
-    .slice(0, 10) as (KakaoUrlItem & KakaoProductItem)[];
+  const [liveList, setLiveList] = useState<LiveProduct[]>([]);
+
+  useEffect(() => {
+    fetch("http://localhost:8088/damoa/live?platform=kakao&isLive=true")
+      .then((res) => res.json())
+      .then((data) => {
+        setLiveList(data.slice(0, 10)); // 상위 10개만 표시
+      })
+      .catch((err) => console.error("라이브 방송 불러오기 실패:", err));
+  }, []);
 
   const detectPromotionBadge = (text: string): string | null => {
     if (/2\s*\+\s*1/.test(text)) return "2+1";
@@ -77,17 +66,10 @@ const LiveNowRecommendSlider: React.FC = () => {
         const product = item.products?.[0];
         const promoBadge =
           detectPromotionBadge(item.title) || (product && detectPromotionBadge(product.name));
+
         return (
           <SwiperSlide key={idx}>
-            <Card
-              sx={{
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                borderRadius: 2,
-              }}
-            >
+            <Card sx={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", borderRadius: 2 }}>
               <Box sx={{ position: "relative" }}>
                 <CardMedia
                   component="img"
@@ -142,26 +124,17 @@ const LiveNowRecommendSlider: React.FC = () => {
                   p: 2,
                 }}
               >
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    mb: 1,
-                  }}
-                >
-
+                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
                   {product?.discountRate ? (
-                    <Box
-                      sx={{
-                        bgcolor: "#1976d2",
-                        color: "white",
-                        fontSize: "0.75rem",
-                        fontWeight: "bold",
-                        borderRadius: 1,
-                        px: 1,
-                        py: 0.3,
-                      }}
-                    >
+                    <Box sx={{
+                      bgcolor: "#1976d2",
+                      color: "white",
+                      fontSize: "0.75rem",
+                      fontWeight: "bold",
+                      borderRadius: 1,
+                      px: 1,
+                      py: 0.3,
+                    }}>
                       {product.discountRate}% OFF
                     </Box>
                   ) : null}
@@ -176,50 +149,23 @@ const LiveNowRecommendSlider: React.FC = () => {
                     WebkitBoxOrient: "vertical",
                   }}
                 >
-                  <Typography
-                    variant="subtitle1"
-                    fontWeight={700}
-                    fontSize="0.95rem"
-                  >
+                  <Typography variant="subtitle1" fontWeight={700} fontSize="0.95rem">
                     {item.title}
                   </Typography>
                 </Box>
 
                 {product && (
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    noWrap
-                    mt={0.5}
-                  >
+                  <Typography variant="body2" color="text.secondary" noWrap mt={0.5}>
                     {product.name}
                   </Typography>
                 )}
 
                 <Box mt="auto">
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      mb: 1,
-                    }}
-                  >
-                    <Avatar
-                      src={item.sellerInfo?.image || ""}
-                      sx={{ width: 24, height: 24 }}
-                    />
-                    <Typography variant="caption">
-                      {item.sellerInfo?.name || "판매자 없음"}
-                    </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                    <Avatar src={item.sellerInfo?.image || ""} sx={{ width: 24, height: 24 }} />
+                    <Typography variant="caption">{item.sellerInfo?.name || "판매자 없음"}</Typography>
                   </Box>
-                  <Button
-                    href={item.liveUrl}
-                    variant="outlined"
-                    size="small"
-                    fullWidth
-                    sx={{ fontWeight: 600 }}
-                  >
+                  <Button href={item.liveUrl} variant="outlined" size="small" fullWidth sx={{ fontWeight: 600 }}>
                     방송 보기
                   </Button>
                 </Box>

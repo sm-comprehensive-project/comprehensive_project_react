@@ -1,8 +1,5 @@
-// src/components/auth/LoginForm.tsx
-"use client";
-
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   TextField,
   Button,
@@ -19,35 +16,38 @@ import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface LoginFormProps {
-  loginData: {
-    username: string;
-    password: string;
-  };
+  loginData: { username: string; password: string };
   setLoginData: React.Dispatch<
-    React.SetStateAction<{
-      username: string;
-      password: string;
-    }>
+    React.SetStateAction<{ username: string; password: string }>
   >;
   onLogin: () => void;
+  loginError?: string;
+  loginSuccess?: string;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({
   loginData,
   setLoginData,
   onLogin,
+  loginError,
+  loginSuccess,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoginData({
+      username: "",
+      password: "",
+    });
+  }, [setLoginData]); // ✅ 의존성 명시
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginData.username || !loginData.password) {
-      setError("아이디와 비밀번호를 모두 입력해주세요.");
+      // 클라이언트 단 유효성 검사는 AuthPage.tsx에서 에러 처리하는 쪽으로 통합해도 좋음
       return;
     }
-    setError(null);
     onLogin();
   };
 
@@ -57,20 +57,27 @@ const LoginForm: React.FC<LoginFormProps> = ({
       onSubmit={handleSubmit}
       sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}
     >
-      {error && (
+      {loginError && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
+          {loginError}
+        </Alert>
+      )}
+      {loginSuccess && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {loginSuccess}
         </Alert>
       )}
 
       <TextField
         fullWidth
-        label="아이디 또는 이메일"
+        label="이메일"
         variant="outlined"
+        type="email"
         value={loginData.username}
         onChange={(e) =>
           setLoginData({ ...loginData, username: e.target.value })
         }
+        autoFocus
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -133,7 +140,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
         />
 
         <Link to="/auth/forgot-password">
-          {" "}
           <Typography
             variant="body2"
             color="text.secondary"

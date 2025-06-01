@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { Calendar, Clock, Tv, Rows, LayoutGrid } from "lucide-react";
+import React, { useEffect, useState, useMemo } from "react";
+import { Calendar, Tv, Bell, Heart, HeartOff } from "lucide-react";
 import {
   Box,
   Typography,
@@ -12,61 +12,49 @@ import {
   Tabs,
   Tab,
   ButtonGroup,
+  IconButton
 } from "@mui/material";
 import dayjs from "dayjs";
-import kakaoSchedule from "../../assets/data/damoa.kakao_schedule.json";
 
-type KakaoScheduleItem = {
-  _id: { $oid: string };
-  liveUrl: string;
-  channelUrl: string;
+// 🔷 타입 정의 추가
+type ScheduleCardItem = {
+  id: number;
   title: string;
+  time: string;
+  date: string;
+  channel: string;
   thumbnail: string;
-  seller: string;
-  platform: string;
-  dates: string[];
+  isNew: boolean;
+  category: string;
+  platform: "kakao" | "naver";
+  liveId: string;
 };
 
-const scheduleData = (kakaoSchedule as KakaoScheduleItem[]).map(
-  (item, index) => {
-    const date = new Date(item.dates[0]);
-    return {
-      id: index,
-      title: item.title,
-      time: dayjs(date).format("HH:mm"),
-      date: dayjs(date).format("YYYY-MM-DD"),
-      channel: item.seller,
-      thumbnail: item.thumbnail,
-      isNew: index < 3,
-      category: "기타",
-    };
-  }
-);
+type LiveApiResponseItem = {
+  liveId: string;
+  live: boolean;
+  lastUpdated: string;
+  liveUrl: string;
+  platform: "kakao" | "naver";
+  thumbnail: string;
+  title: string;
+  products: unknown[];
+  sellerInfo: {
+    name: string;
+    url: string;
+    image: string;
+  };
+  seller?: string;
+  dates: string[];
+};
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   const days = ["일", "월", "화", "수", "목", "금", "토"];
-  return `${date.getMonth() + 1}월 ${date.getDate()}일 (${
-    days[date.getDay()]
-  })`;
+  return `${date.getMonth() + 1}월 ${date.getDate()}일 (${days[date.getDay()]})`;
 };
 
-const groupByDate = (data: typeof scheduleData) => {
-  const grouped: Record<string, typeof scheduleData> = {};
-  data.forEach((item) => {
-    if (!grouped[item.date]) grouped[item.date] = [];
-    grouped[item.date].push(item);
-  });
-  return grouped;
-};
-
-const generateDateRange = () => {
-  return Array.from({ length: 5 }, (_, i) =>
-    dayjs()
-      .add(i - 1, "day")
-      .format("YYYY-MM-DD")
-  );
-};
+const generateDateRange = () => Array.from({ length: 5 }, (_, i) => dayjs().add(i - 1, "day").format("YYYY-MM-DD"));
 
 const getDateLabel = (dateString: string) => {
   const today = new Date();
@@ -78,227 +66,439 @@ const getDateLabel = (dateString: string) => {
 
 const SchedulePage: React.FC = () => {
   const dateRange = generateDateRange();
-  const groupedSchedule = groupByDate(scheduleData);
   const today = new Date().toISOString().split("T")[0];
-  const [selectedDate, setSelectedDate] = React.useState(today);
-  const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid");
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [platformFilter, setPlatformFilter] = useState<"all" | "kakao" | "naver">("all");
+  const [kakaoScheduleData, setKakaoScheduleData] = useState<ScheduleCardItem[]>([]);
+  const [naverScheduleData, setNaverScheduleData] = useState<ScheduleCardItem[]>([]);
+  const [likedIds, setLikedIds] = useState<string[]>([]);
 
+  const transformData = (items: LiveApiResponseItem[], platform: "kakao" | "naver") =>
+    items.map((item, index) => {
+      const dateStr = item.dates?.[0] || new Date().toISOString();
+      const date = new Date(dateStr);
+      return {
+        id: index,
+        title: item.title,
+        time: dayjs(date).format("HH:mm"),
+        date: dayjs(date).format("YYYY-MM-DD"),
+        channel: item.seller ?? "알 수 없음",
+        thumbnail: item.thumbnail,
+        isNew: index < 3,
+        category: "기타",
+        platform,
+        liveId: item.liveId,
+      };
+    });
+
+  const fetchData = async () => {
+    const kakaoRes = await fetch("http://localhost:8088/damoa/schedule/kakao");
+    const naverRes = await fetch("http://localhost:8088/damoa/schedule/naver");
+    const kakaoData = await kakaoRes.json();
+    const naverData = await naverRes.json();
+    setKakaoScheduleData(transformData(kakaoData, "kakao"));
+    setNaverScheduleData(transformData(naverData, "naver"));
+  };
+
+  const fetchLikes = async (email: string) => {
+    try {
+      const res = await fetch(`http://localhost:8088/api/user/likes?email=${email}`);
+      if (res.ok) {
+        const data = await res.json();
+        setLikedIds(data);
+      }
+    } catch (err) {
+      console.error("찜 목록 요청 실패:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    const storedUser = sessionStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const { email } = JSON.parse(storedUser);
+        fetchLikes(email);
+      } catch (e) {
+        console.error("유저 파싱 오류:", e);
+      }
+    } else {
+      fetch("http://localhost:8088/api/user/me", {
+        credentials: "include",
+      })
+        .then(res => {
+          if (!res.ok) throw new Error("인증 실패");
+          return res.json();
+        })
+        .then(data => {
+          if (data.success && data.user?.email) {
+            sessionStorage.setItem("user", JSON.stringify(data.user));
+            fetchLikes(data.user.email);
+          }
+        })
+        .catch(err => {
+          console.warn("로그인 정보 없음 또는 인증 실패:", err.message);
+        });
+    }
+  }, []);
+
+  const handleLikeToggle = async (liveId: string) => {
+    const storedUser = sessionStorage.getItem("user");
+    if (!storedUser) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+    const { email } = JSON.parse(storedUser);
+    const isLiked = likedIds.includes(liveId);
+    const url = `http://localhost:8088/api/user/like/${liveId}?email=${email}`;
+    const res = await fetch(url, { method: isLiked ? "DELETE" : "POST" });
+    if (res.ok) {
+      setLikedIds(prev => isLiked ? prev.filter(id => id !== liveId) : [...prev, liveId]);
+    } else {
+      alert("찜 상태 변경 실패");
+    }
+  };
+
+  const filteredScheduleData = useMemo(() => {
+    let combined = [...kakaoScheduleData, ...naverScheduleData];
+    if (platformFilter !== "all") {
+      combined = combined.filter(item => item.platform === platformFilter);
+    }
+    return combined;
+  }, [platformFilter, kakaoScheduleData, naverScheduleData]);
+
+  const groupedSchedule = useMemo(() => {
+    const grouped: Record<string, ScheduleCardItem[]> = {};
+    filteredScheduleData.forEach(item => {
+      if (!grouped[item.date]) grouped[item.date] = [];
+      grouped[item.date].push(item);
+    });
+    Object.keys(grouped).forEach(date => {
+      grouped[date].sort((a, b) => a.time.localeCompare(b.time));
+    });
+    return grouped;
+  }, [filteredScheduleData]);
+
+  const handleAlertClick = (item: ScheduleCardItem) => {
+    alert(`${item.title} 방송 알림 설정 완료!`);
+  };
   return (
-    <Box sx={{ minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
-      {/* Header */}
+    <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+      {/* 상단 헤더 */}
       <Box
         sx={{
-          background: "linear-gradient(160deg, #FF5722 -40%, #3f51b5 100%)",
-          py: { xs: 4, md: 6 },
-          color: "white",
+          background: "linear-gradient(160deg, #FF5722, #3f51b5)",
+          color: "#fff",
+          py: 5,
         }}
       >
-        <Box sx={{ maxWidth: "1200px", mx: "auto", px: 2 }}>
+        <Box sx={{ maxWidth: 1200, mx: "auto", px: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
             <Calendar style={{ marginRight: 8 }} />
-            <Typography variant="h4" fontWeight="bold">
+            <Typography variant="h4" fontWeight={700}>
               방송 편성표
             </Typography>
           </Box>
-          <Typography variant="body1" sx={{ maxWidth: 600 }}>
-            DAMOA의 다양한 라이브 방송 일정을 확인하고 관심 있는 방송을 놓치지
-            마세요.
+          <Typography variant="body1">
+            DAMOA의 다양한 라이브 방송 일정을 한눈에 확인해보세요.
           </Typography>
         </Box>
       </Box>
 
-      <Box sx={{ maxWidth: "1200px", mx: "auto", px: 2, py: 3 }}>
-        {/* 날짜 선택 탭 */}
+      {/* 필터 및 리스트 */}
+      <Box sx={{ maxWidth: 1200, mx: "auto", px: 2, py: 3 }}>
         <Box
           sx={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            flexWrap: "wrap", // 반응형 대응
-            gap: 1,
             mb: 2,
+            flexWrap: "wrap",
+            gap: 2,
           }}
         >
-          {/* 날짜 탭 */}
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <ButtonGroup>
+              <Button
+                onClick={() => setViewMode("grid")}
+                variant={viewMode === "grid" ? "contained" : "outlined"}
+              >
+                카드형
+              </Button>
+              <Button
+                onClick={() => setViewMode("list")}
+                variant={viewMode === "list" ? "contained" : "outlined"}
+              >
+                리스트형
+              </Button>
+            </ButtonGroup>
+            <Tabs
+              value={platformFilter}
+              onChange={(_, v) => setPlatformFilter(v)}
+            >
+              <Tab label="전체" value="all" />
+              <Tab label="카카오" value="kakao" />
+              <Tab label="네이버" value="naver" />
+            </Tabs>
+          </Box>
           <Tabs
             value={selectedDate}
             onChange={(_, v) => setSelectedDate(v)}
             variant="scrollable"
             scrollButtons="auto"
-            sx={{
-              "& .MuiTabs-indicator": { backgroundColor: "#3f51b5" },
-              "& .MuiTab-root": {
-                textTransform: "none",
-                fontWeight: 500,
-                fontSize: "0.95rem",
-                color: "#666",
-                "&.Mui-selected": {
-                  color: "#3f51b5",
-                  fontWeight: 600,
-                },
-              },
-            }}
           >
             {dateRange.map((date) => (
               <Tab
                 key={date}
                 value={date}
-                label={`${
-                  getDateLabel(date) === "오늘" ? "오늘 " : ""
-                }${formatDate(date)}`}
+                label={`${getDateLabel(date) ? "오늘 " : ""}${formatDate(
+                  date
+                )}`}
               />
             ))}
           </Tabs>
-
-          {/* 보기 전환 버튼 */}
-          <ButtonGroup variant="outlined" size="small">
-            <Button
-              onClick={() => setViewMode("grid")}
-              variant={viewMode === "grid" ? "contained" : "outlined"}
-              startIcon={<LayoutGrid size={16} />}
-            >
-              카드형
-            </Button>
-            <Button
-              onClick={() => setViewMode("list")}
-              variant={viewMode === "list" ? "contained" : "outlined"}
-              startIcon={<Rows size={16} />}
-            >
-              리스트형
-            </Button>
-          </ButtonGroup>
         </Box>
 
-        {/* 방송 리스트 */}
-        <Box
-          sx={{
-            bgcolor: "white",
-            borderRadius: 2,
-            p: 3,
-            mb: 3,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-          }}
-        >
+        {/* 리스트/카드 렌더링 */}
+        <Box sx={{ background: "#fff", borderRadius: 2, p: 3 }}>
           <Typography variant="h6" color="#3f51b5" fontWeight={600} mb={2}>
             {getDateLabel(selectedDate)} 방송 일정 ({formatDate(selectedDate)})
           </Typography>
 
-          {groupedSchedule[selectedDate] &&
-          groupedSchedule[selectedDate].length > 0 ? (
-            <Box
-              sx={{
-                display: viewMode === "grid" ? "grid" : "flex",
-                flexDirection: viewMode === "list" ? "column" : undefined,
-                gap: 2,
-                gridTemplateColumns:
-                  viewMode === "grid"
-                    ? {
-                        xs: "1fr",
-                        sm: "repeat(2, 1fr)",
-                        md: "repeat(3, 1fr)",
-                        lg: "repeat(4, 1fr)",
-                        xl: "repeat(5, 1fr)",
-                      }
-                    : undefined,
-              }}
-            >
-              {groupedSchedule[selectedDate].map((item) => (
-                <Card
+          <Box
+            sx={{
+              display: viewMode === "grid" ? "grid" : "flex",
+              gridTemplateColumns:
+                viewMode === "grid"
+                  ? {
+                      xs: "1fr",
+                      sm: "repeat(2, 1fr)",
+                      md: "repeat(3, 1fr)",
+                      lg: "repeat(4, 1fr)",
+                    }
+                  : undefined,
+              flexDirection: viewMode === "list" ? "column" : undefined,
+              gap: 2,
+            }}
+          >
+            {(groupedSchedule[selectedDate] || []).map((item) =>
+              viewMode === "list" ? (
+                // 👉 리스트형 UI
+                <Box
                   key={item.id}
                   sx={{
-                    display: viewMode === "list" ? "flex" : "block",
+                    display: "flex",
                     gap: 2,
-                    borderRadius: 2,
-                    overflow: "hidden",
-                    minHeight: viewMode === "list" ? 120 : undefined,
-                    transition: "transform 0.2s, box-shadow 0.2s",
-                    "&:hover": {
-                      transform: "translateY(-2px)",
-                      boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
-                    },
+                    p: 2,
+                    borderBottom: "1px solid #eee",
+                    borderRadius: 1,
+                    backgroundColor: "#fafafa",
                   }}
                 >
-                  <CardMedia
-                    component="div"
+                  <Box
                     sx={{
-                      width: viewMode === "list" ? 140 : "100%",
-                      height: viewMode === "list" ? 100 : 180,
+                      width: 160,
+                      height: 90,
+                      borderRadius: 1,
                       backgroundImage: `url(${item.thumbnail})`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
+                      position: "relative",
                       flexShrink: 0,
                     }}
-                  />
-                  <CardContent
-                    sx={{
-                      p: 2,
-                      flex: 1,
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "center",
-                    }}
                   >
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 4,
+                        left: 4,
+                        backgroundColor:
+                          item.platform === "kakao" ? "#FEE500" : "#03C75A",
+                        color: "#000",
+                        fontWeight: "bold",
+                        fontSize: "0.7rem",
+                        px: 1,
+                        py: "2px",
+                        borderRadius: "4px",
+                      }}
+                    >
+                      {item.platform.toUpperCase()}
+                    </Box>
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        bottom: 4,
+                        right: 4,
+                        backgroundColor: "rgba(0,0,0,0.6)",
+                        color: "#fff",
+                        px: 1,
+                        py: "2px",
+                        borderRadius: "4px",
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      {item.time}
+                    </Box>
+                  </Box>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography
+                      fontWeight={600}
+                      fontSize="0.95rem"
+                      mb={0.5}
+                      noWrap
+                    >
+                      {item.title}
+                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Tv size={14} />
+                      <Typography
+                        variant="body2"
+                        sx={{ fontSize: "0.75rem", color: "#666" }}
+                      >
+                        {item.channel}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleAlertClick(item)}
+                    >
+                      <Bell size={16} />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleLikeToggle(item.liveId)}
+                    >
+                      {likedIds.includes(item.liveId) ? (
+                        <Heart size={16} color="red" />
+                      ) : (
+                        <HeartOff size={16} />
+                      )}
+                    </IconButton>
+                  </Box>
+                </Box>
+              ) : (
+                // 👈 리스트형 끝
+                // 👉 카드형 UI
+                <Card
+                  key={item.id}
+                  sx={{
+                    borderRadius: 2,
+                    overflow: "hidden",
+                    position: "relative",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                    transition: "all 0.2s",
+                    "&:hover": {
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                      transform: "translateY(-2px)",
+                    },
+                  }}
+                >
+                  <Box sx={{ position: "relative" }}>
+                    <CardMedia
+                      component="div"
+                      sx={{
+                        height: 160,
+                        backgroundImage: `url(${item.thumbnail})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          inset: 0,
+                          background:
+                            "radial-gradient(transparent, rgba(0,0,0,0.6))",
+                        }}
+                      />
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          bottom: 8,
+                          right: 8,
+                          backgroundColor: "rgba(0,0,0,0.7)",
+                          color: "#fff",
+                          px: 1.2,
+                          py: 0.5,
+                          borderRadius: 1,
+                          fontWeight: "bold",
+                          fontSize: "1rem",
+                        }}
+                      >
+                        {item.time}
+                      </Box>
+                    </CardMedia>
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 8,
+                        left: 8,
+                        backgroundColor:
+                          item.platform === "kakao" ? "#FEE500" : "#03C75A",
+                        color: "#000",
+                        fontWeight: 700,
+                        fontSize: "0.7rem",
+                        px: 1,
+                        py: "2px",
+                        borderRadius: "4px",
+                      }}
+                    >
+                      {item.platform.toUpperCase()}
+                    </Box>
+                  </Box>
+                  <CardContent sx={{ p: 1.5 }}>
+                    <Typography fontWeight={600} fontSize="0.9rem" noWrap>
+                      {item.title}
+                    </Typography>
                     <Box
                       sx={{
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        mb: 0.5,
+                        mt: 0.5,
                       }}
                     >
-                      <Typography
-                        variant="subtitle1"
-                        sx={{
-                          fontSize: "1.05rem",
-                          fontWeight: 600,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          mr: 2,
-                        }}
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
                       >
-                        {item.title}
-                      </Typography>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        sx={{
-                          minWidth: "auto",
-                          whiteSpace: "nowrap",
-                          px: 2,
-                          py: 0.5,
-                          fontSize: "0.75rem",
-                          color: "#3f51b5",
-                          borderColor: "#3f51b5",
-                        }}
+                        <Tv size={14} />
+                        <Typography
+                          variant="body2"
+                          sx={{ fontSize: "0.75rem", color: "#666" }}
+                        >
+                          {item.channel}
+                        </Typography>
+                      </Box>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
                       >
-                        알림 설정
-                      </Button>
-                    </Box>
-
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Clock size={14} />
-                      <Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
-                        {item.time}
-                      </Typography>
-                      <Tv size={14} style={{ marginLeft: 12, color: "#666" }} />
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ fontSize: "0.85rem" }}
-                      >
-                        {item.channel}
-                      </Typography>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleAlertClick(item)}
+                        >
+                          <Bell size={16} />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleLikeToggle(item.liveId)}
+                        >
+                          {likedIds.includes(item.liveId) ? (
+                            <Heart size={16} color="red" />
+                          ) : (
+                            <HeartOff size={16} />
+                          )}
+                        </IconButton>
+                      </Box>
                     </Box>
                   </CardContent>
                 </Card>
-              ))}
-            </Box>
-          ) : (
-            <Typography sx={{ textAlign: "center", py: 6, color: "#666" }}>
-              해당 날짜에 예정된 방송이 없습니다.
-            </Typography>
-          )}
+                // 👈 카드형 끝
+              )
+            )}
+          </Box>
         </Box>
       </Box>
     </Box>

@@ -19,6 +19,7 @@ import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import LiveTvIcon from "@mui/icons-material/LiveTv";
 import MenuIcon from "@mui/icons-material/Menu";
+import { useSearch } from "../../hooks/useSearch"; // 상단에 추가
 
 const categories = [
   { emoji: "👗", label: "패션" },
@@ -39,7 +40,11 @@ const dummySearchResults = [
 
 const Header = () => {
   const location = useLocation();
-
+  interface User {
+    nickname: string;
+    // 필요한 속성만 추가
+  }
+  const [user, setUser] = useState<User | null>(null);
   const getThemeStyle = () => {
     if (location.pathname.startsWith("/weeklyschedule")) {
       return {
@@ -76,6 +81,25 @@ const Header = () => {
   const categoryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch("http://localhost:8088/api/user/me", {
+          method: "GET",
+          credentials: "include", // ✅ 세션 쿠키 포함
+        });
+        const result = await response.json();
+        if (result.success) {
+          setUser(result.user);
+        } else {
+          setUser(null);
+        }
+      } catch (err) {
+        console.error("fetchUser error", err); // ✅ 이렇게 써서 err 사용하게 만들기
+        setUser(null);
+      }
+    };
+
+    fetchUser();
     const handleClickOutside = (event: MouseEvent) => {
       if (
         searchRef.current &&
@@ -236,10 +260,14 @@ const Header = () => {
                 backgroundColor: isSearchFocused ? "#fff" : "#f5f5f5",
                 p: "8px 12px",
                 borderRadius: isSearchFocused ? "8px 8px 0 0" : "8px",
-                boxShadow: isSearchFocused ? "0 4px 15px rgba(0,0,0,0.08)" : "none",
+                boxShadow: isSearchFocused
+                  ? "0 4px 15px rgba(0,0,0,0.08)"
+                  : "none",
               }}
             >
-              <SearchIcon sx={{ color: isSearchFocused ? themeColor : "#9e9e9e", mr: 1 }} />
+              <SearchIcon
+                sx={{ color: isSearchFocused ? themeColor : "#9e9e9e", mr: 1 }}
+              />
               <InputBase
                 inputRef={inputRef}
                 placeholder="검색어 입력..."
@@ -275,7 +303,9 @@ const Header = () => {
                 boxShadow: "0 4px 15px rgba(0,0,0,0.08)",
                 opacity: isSearchFocused ? 1 : 0,
                 visibility: isSearchFocused ? "visible" : "hidden",
-                transform: isSearchFocused ? "translateY(0)" : "translateY(-10px)",
+                transform: isSearchFocused
+                  ? "translateY(0)"
+                  : "translateY(-10px)",
                 transition: "opacity 0.2s, transform 0.2s, visibility 0.2s",
               }}
             >
@@ -295,7 +325,9 @@ const Header = () => {
                   }}
                 >
                   <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <SearchIcon sx={{ color: "#9e9e9e", fontSize: "0.9rem", mr: 1 }} />
+                    <SearchIcon
+                      sx={{ color: "#9e9e9e", fontSize: "0.9rem", mr: 1 }}
+                    />
                     <Typography
                       variant="body2"
                       noWrap
@@ -324,25 +356,73 @@ const Header = () => {
 
           {/* 사용자 메뉴 */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Button
-              component={Link}
-              to="/auth"
-              sx={{
-                color: "#555",
-                textTransform: "none",
-                fontWeight: "500",
-                "&:hover": { color: themeColor },
-              }}
+            {user ? (
+              <>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 600, cursor: "pointer" }}
+                  onClick={() => {
+                    alert(JSON.stringify(user, null, 2));
+                  }}
+                >
+                  {user.nickname} 님
+                </Typography>
+
+                <Button
+                  onClick={async () => {
+                    try {
+                      const res = await fetch(
+                        "http://localhost:8088/api/user/logout",
+                        {
+                          method: "POST",
+                          credentials: "include",
+                        }
+                      );
+                      const result = await res.json();
+                      if (result.success) {
+                        setUser(null); // ✅ 상태 초기화
+                        window.location.href = "/";
+                      }
+                    } catch (err) {
+                      console.error("Logout failed:", err);
+                    }
+                  }}
+                  sx={{
+                    color: "#555",
+                    textTransform: "none",
+                    fontWeight: "500",
+                    "&:hover": { color: themeColor },
+                  }}
+                >
+                  로그아웃
+                </Button>
+              </>
+            ) : (
+              <Button
+                component={Link}
+                to="/auth"
+                sx={{
+                  color: "#555",
+                  textTransform: "none",
+                  fontWeight: "500",
+                  "&:hover": { color: themeColor },
+                }}
+              >
+                로그인 / 회원가입
+              </Button>
+            )}
+
+            {/* ❤️ 찜 아이콘 */}
+            <IconButton
+              sx={{ color: "#555", "&:hover": { color: themeColor } }}
             >
-              로그인 / 회원가입
-            </Button>
-            <IconButton sx={{ color: "#555", "&:hover": { color: themeColor } }}>
               <FavoriteBorderIcon />
             </IconButton>
-            <IconButton sx={{ color: "#555", "&:hover": { color: themeColor } }}>
-              <PersonOutlineIcon />
-            </IconButton>
-            <IconButton sx={{ color: "#555", "&:hover": { color: themeColor } }}>
+
+            {/* 🛍️ 장바구니 아이콘 */}
+            <IconButton
+              sx={{ color: "#555", "&:hover": { color: themeColor } }}
+            >
               <Badge badgeContent={0} showZero={false} color="success">
                 <ShoppingBagOutlinedIcon />
               </Badge>

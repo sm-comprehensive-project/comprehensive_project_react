@@ -11,11 +11,13 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { LogIn, UserPlus } from "lucide-react";
+import { useNavigate } from "react-router-dom"; // 상단에 추가
 
 import LoginForm from "../../components/auth/LoginForm";
 import SignupForm from "../../components/auth/SignupForm";
 
 const AuthPage: React.FC = () => {
+  const navigate = useNavigate(); // 👈 추가
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [tab, setTab] = useState(0);
@@ -54,12 +56,58 @@ const AuthPage: React.FC = () => {
     if (params.get("mode") === "signup") setTab(1);
   }, []);
 
-  const handleLogin = () => {
-    console.log("로그인 정보:", loginData);
+  const [loginError, setLoginError] = useState("");
+  const [loginSuccess, setLoginSuccess] = useState("");
+
+  const handleLogin = async () => {
+    try {
+      setLoginError("");
+      setLoginSuccess("");
+
+      const query = new URLSearchParams({
+        email: loginData.username,
+        password: loginData.password,
+      });
+
+      const response = await fetch(
+        `http://localhost:8088/api/user/login?${query}`,
+        {
+          method: "POST",
+          credentials: "include", // ✅ 세션 유지
+        }
+      );
+
+      const result = await response.json();
+      console.log("🟢 로그인 응답:", result); // ✅ 콘솔 출력 추가
+
+      if (result.success) {
+        const meResponse = await fetch("http://localhost:8088/api/user/me", {
+          method: "GET",
+          credentials: "include",
+        });
+
+        const meResult = await meResponse.json();
+        console.log("🟢 /me 응답:", meResult); // ✅ 이것도 같이 추가하면 좋음
+
+        if (meResult.success) {
+          setLoginSuccess("로그인 성공! 메인 페이지로 이동합니다.");
+          setTimeout(() => navigate("/"), 1000);
+        } else {
+          setLoginError("세션 유저 정보 확인 실패");
+        }
+      } else {
+        setLoginError("로그인 실패: " + result.message);
+      }
+    } catch (err) {
+      console.error("❌ 로그인 오류:", err);
+      setLoginError("로그인 중 오류가 발생했습니다.");
+    }
   };
 
   const handleSignup = () => {
     console.log("회원가입 정보:", signupData);
+    setLoginData({ username: signupData.email, password: "" }); // 이메일 채움
+    setTab(0); // 👈 회원가입 후 로그인 페이지로 이동
   };
 
   return (
@@ -189,6 +237,8 @@ const AuthPage: React.FC = () => {
                     loginData={loginData}
                     setLoginData={setLoginData}
                     onLogin={handleLogin}
+                    loginError={loginError}
+                    loginSuccess={loginSuccess}
                   />
                 ) : (
                   <SignupForm
