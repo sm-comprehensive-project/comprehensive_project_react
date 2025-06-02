@@ -20,6 +20,7 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import LiveTvIcon from "@mui/icons-material/LiveTv";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useSearch } from "../../hooks/useSearch"; // 상단에 추가
+import { useNavigate } from "react-router-dom";
 
 const categories = [
   { emoji: "👗", label: "패션" },
@@ -39,6 +40,8 @@ const dummySearchResults = [
 ];
 
 const Header = () => {
+  const navigate = useNavigate();
+
   const location = useLocation();
   interface User {
     nickname: string;
@@ -262,33 +265,55 @@ const Header = () => {
                   : "none",
               }}
             >
-              <SearchIcon
-                sx={{ color: isSearchFocused ? themeColor : "#9e9e9e", mr: 1 }}
-              />
               <InputBase
                 inputRef={inputRef}
                 placeholder="검색어 입력..."
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && searchValue.trim()) {
+                    navigate(
+                      `/search?query=${encodeURIComponent(searchValue.trim())}`
+                    );
+                    setIsSearchFocused(false);
+                  }
+                }}
                 sx={{
                   width: "100%",
                   fontSize: "0.9rem",
                   "&::placeholder": { color: "#9e9e9e" },
                 }}
               />
+
               {searchValue && (
                 <IconButton
                   size="small"
                   onClick={clearSearch}
-                  sx={{ color: "#9e9e9e", p: "2px" }}
+                  sx={{ color: "#9e9e9e", p: "2px", ml: 1 }}
                 >
                   <CloseIcon fontSize="small" />
                 </IconButton>
               )}
+
+              {/* 🔍 검색 버튼 */}
+              <IconButton
+                size="small"
+                onClick={() => {
+                  if (searchValue.trim()) {
+                    navigate(
+                      `/search?query=${encodeURIComponent(searchValue.trim())}`
+                    );
+                    setIsSearchFocused(false);
+                  }
+                }}
+                sx={{ color: themeColor, ml: 1 }}
+              >
+                <SearchIcon />
+              </IconButton>
             </Box>
 
-            {/* 검색 결과 */}
+            {/* 🔽 최근 검색어 드롭다운 */}
             <Box
               sx={{
                 position: "absolute",

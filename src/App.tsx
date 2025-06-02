@@ -9,6 +9,7 @@ import TestPage from "./pages/test";
 import Tictoc from "./pages/tictoc"; // ✅ 추가
 import VideoTest from "./pages/videotest"; // ✅ 추가
 import Watch from "./pages/StreamDetail/watch"
+import SearchResultPage from "./pages/search/SearchResultPage";
 
 const App: React.FC = () => {
   return (
@@ -21,7 +22,7 @@ const App: React.FC = () => {
         <Route path="/test" element={<TestPage />} />
         <Route path="/videotest" element={<Layout><VideoTest /></Layout>} /> {/* ✅ 테스트용 추가 */}
         <Route path="/watch" element={<Layout><Watch/></Layout>} /> {/* ✅ 테스트용 추가 */}
-
+        <Route path="/search" element={<Layout><SearchResultPage /></Layout>} />
       </Routes>
     </Router>
   );
