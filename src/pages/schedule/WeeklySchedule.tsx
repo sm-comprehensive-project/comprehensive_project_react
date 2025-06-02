@@ -71,10 +71,12 @@ const getDateLabel = (dateString: string) => {
   date.setHours(0, 0, 0, 0);
   return date.getTime() === today.getTime() ? "오늘" : "";
 };
+const isStarted = (item: ScheduleCardItem) =>
+  dayjs(`${item.date}T${item.time}`).isBefore(dayjs());
 
 const SchedulePage: React.FC = () => {
   const dateRange = generateDateRange();
-  const today = new Date().toISOString().split("T")[0];
+  const today = dayjs().format("YYYY-MM-DD");
   const [selectedDate, setSelectedDate] = useState(today);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [platformFilter, setPlatformFilter] = useState<
@@ -125,20 +127,26 @@ const SchedulePage: React.FC = () => {
       console.error("스케줄 데이터 불러오기 실패:", err);
     }
   };
-
+  // ✅ fetchLikes 로그 추가
   const fetchLikes = async (email: string) => {
+    console.log("📥 [fetchLikes] 호출됨 - email:", email);
     try {
       const res = await fetch(
         `http://localhost:8088/api/user/likes?email=${email}`
       );
       const result = await res.json();
+      console.log("📬 [fetchLikes] 응답:", result);
+
       if (result.success && Array.isArray(result.liked)) {
-        setLikedIds(result.liked);
+        // ✅ 문자열로 변환해서 비교 정확도 보장
+        setLikedIds(result.liked.map((id: unknown) => String(id)));
+        console.log("✅ [fetchLikes] 찜 리스트 반영됨:", result.liked);
       } else {
+        console.warn("⚠️ [fetchLikes] 찜 데이터 없음 또는 실패:", result);
         setLikedIds([]);
       }
     } catch (err) {
-      console.error("찜 목록 조회 오류:", err);
+      console.error("❌ [fetchLikes] 요청 실패:", err);
       setLikedIds([]);
     }
   };
@@ -157,27 +165,57 @@ const SchedulePage: React.FC = () => {
   }, []);
 
   const handleLikeToggle = async (liveId: string) => {
+    console.log("🛠️ [handleLikeToggle] 호출됨. liveId:", liveId);
+
     const storedUser = sessionStorage.getItem("user");
     if (!storedUser) {
+      console.warn(
+        "⚠️ [handleLikeToggle] 로그인 정보 없음 - 세션에 사용자 없음"
+      );
       alert("로그인이 필요합니다.");
       return;
     }
-    const { email } = JSON.parse(storedUser);
+
+    let email = "";
+    try {
+      const user = JSON.parse(storedUser);
+      email = user?.email;
+      console.log("📧 [handleLikeToggle] 이메일:", email);
+    } catch (err) {
+      console.error("❌ [handleLikeToggle] 세션 파싱 실패:", err);
+      return;
+    }
+
     const isLiked = likedIds.includes(liveId);
     const url = `http://localhost:8088/api/user/like/${liveId}?email=${email}`;
+    console.log(
+      `🌐 [handleLikeToggle] ${isLiked ? "DELETE" : "POST"} 요청 URL: ${url}`
+    );
+
     try {
       const res = await fetch(url, {
         method: isLiked ? "DELETE" : "POST",
       });
-      if (res.ok) {
+
+      const result = await res.json().catch(() => ({}));
+      console.log(
+        "📨 [handleLikeToggle] 서버 응답 상태:",
+        res.status,
+        res.statusText
+      );
+      console.log("📨 [handleLikeToggle] 응답 내용:", result);
+
+      if (res.ok && result.success !== false) {
         setLikedIds((prev) =>
           isLiked ? prev.filter((id) => id !== liveId) : [...prev, liveId]
         );
+        console.log("✅ [handleLikeToggle] 찜 상태 UI 반영 완료");
       } else {
         alert("찜 상태 변경 실패");
+        console.warn("❗ [handleLikeToggle] 실패 응답:", result);
       }
     } catch (err) {
-      console.error("찜 토글 실패:", err);
+      console.error("❌ [handleLikeToggle] 서버 요청 실패:", err);
     }
   };
 
@@ -200,10 +238,6 @@ const SchedulePage: React.FC = () => {
     });
     return grouped;
   }, [filteredScheduleData]);
-
-  const handleAlertClick = (item: ScheduleCardItem) => {
-    alert(`${item.title} 방송 알림 설정 완료!`);
-  };
 
   return (
     <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
@@ -316,8 +350,32 @@ const SchedulePage: React.FC = () => {
                     borderBottom: "1px solid #eee",
                     borderRadius: 1,
                     backgroundColor: "#fafafa",
+                    position: "relative",
+                    opacity: isStarted(item) ? 1 : 0.5,
+                    filter: isStarted(item) ? "none" : "grayscale(70%)",
                   }}
                 >
+                  {/* LIVE 뱃지 (시작된 방송만 표시) */}
+                  {isStarted(item) && (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 8,
+                        right: 8,
+                        backgroundColor: "red",
+                        color: "#fff",
+                        fontSize: "0.7rem",
+                        fontWeight: "bold",
+                        px: 1,
+                        py: "2px",
+                        borderRadius: "4px",
+                        zIndex: 2,
+                      }}
+                    >
+                      LIVE
+                    </Box>
+                  )}
+
                   <Box
                     sx={{
                       width: 160,
@@ -363,6 +421,7 @@ const SchedulePage: React.FC = () => {
                       {item.time}
                     </Box>
                   </Box>
+
                   <Box sx={{ flex: 1 }}>
                     <Typography
                       fontWeight={600}
@@ -382,26 +441,20 @@ const SchedulePage: React.FC = () => {
                       </Typography>
                     </Box>
                   </Box>
+
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <Box
-                      sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                    <IconButton
+                      onClick={() => {
+                        console.log("🛠️ handleLikeToggle 클릭됨 - item:", item);
+                        handleLikeToggle(item.liveId);
+                      }}
                     >
-                      <IconButton
-                        onClick={() => {
-                          console.log(
-                            "🛠️ handleLikeToggle 클릭됨 - item:",
-                            item
-                          );
-                          handleLikeToggle(item.liveId);
-                        }}
-                      >
-                        {likedIds.includes(item.liveId) ? (
-                          <Heart color="red" />
-                        ) : (
-                          <HeartOff />
-                        )}
-                      </IconButton>
-                    </Box>
+                      {likedIds.includes(item.liveId) ? (
+                        <Heart color="red" />
+                      ) : (
+                        <HeartOff />
+                      )}
+                    </IconButton>
                   </Box>
                 </Box>
               ) : (
@@ -415,12 +468,35 @@ const SchedulePage: React.FC = () => {
                     position: "relative",
                     boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
                     transition: "all 0.2s",
+                    opacity: isStarted(item) ? 1 : 0.5,
+                    filter: isStarted(item) ? "none" : "grayscale(70%)",
                     "&:hover": {
                       boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                       transform: "translateY(-2px)",
                     },
                   }}
                 >
+                  {/* LIVE 뱃지 */}
+                  {isStarted(item) && (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 8,
+                        right: 8,
+                        backgroundColor: "red",
+                        color: "#fff",
+                        fontSize: "0.7rem",
+                        fontWeight: "bold",
+                        px: 1,
+                        py: "2px",
+                        borderRadius: "4px",
+                        zIndex: 2,
+                      }}
+                    >
+                      LIVE
+                    </Box>
+                  )}
+
                   <Box sx={{ position: "relative" }}>
                     <CardMedia
                       component="div"
@@ -456,6 +532,7 @@ const SchedulePage: React.FC = () => {
                         {item.time}
                       </Box>
                     </CardMedia>
+
                     <Box
                       sx={{
                         position: "absolute",
@@ -474,6 +551,7 @@ const SchedulePage: React.FC = () => {
                       {item.platform.toUpperCase()}
                     </Box>
                   </Box>
+
                   <CardContent sx={{ p: 1.5 }}>
                     <Typography fontWeight={600} fontSize="0.9rem" noWrap>
                       {item.title}
@@ -519,6 +597,7 @@ const SchedulePage: React.FC = () => {
                     </Box>
                   </CardContent>
                 </Card>
+
                 // 👈 카드형 끝
               )
             )}
