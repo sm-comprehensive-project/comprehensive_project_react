@@ -1,13 +1,12 @@
-// ✅ 수정사항:
-// - /me API 제거
-// - sessionStorage.getItem("user") 기반 추천 API 호출
+// src/components/HeroBanner.tsx
 
 "use client";
 
-import { useEffect, useState } from "react";
+import React from "react";
 import { Box, Container, Typography, Button } from "@mui/material";
 
-type Recommendation = {
+// HeroBanner에서 사용하는 Recommendation 타입
+export type Recommendation = {
   liveId: string;
   title: string;
   thumbnail: string;
@@ -20,41 +19,19 @@ type Recommendation = {
   };
 };
 
-type User = {
+export type User = {
   email: string;
   nickname: string;
 };
 
-const HeroBanner = () => {
-  const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+interface HeroBannerProps {
+  user: User | null;
+  recommendedItem: Recommendation | null;
+}
 
-  useEffect(() => {
-    const storedUser = sessionStorage.getItem("user");
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-
-        fetch(`http://localhost:8088/api/user/recommendations/top?email=${parsedUser.email}`, {
-          method: "GET",
-          credentials: "include",
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data?.success && data.recommendation) {
-              setRecommendation(data.recommendation);
-            }
-          })
-          .catch((err) => {
-            console.error("추천 요청 실패:", err);
-          });
-      } catch (err) {
-        console.warn("세션 사용자 파싱 실패", err);
-        setUser(null);
-      }
-    }
-  }, []);
+const HeroBanner: React.FC<HeroBannerProps> = ({ user, recommendedItem }) => {
+  // 디버깅용 console.log 추가
+  console.log("[HeroBanner] 렌더링 → user:", user, "recommendedItem:", recommendedItem);
 
   return (
     <Box
@@ -75,6 +52,7 @@ const HeroBanner = () => {
             justifyContent: "space-between",
           }}
         >
+          {/* 왼쪽: 텍스트 / 버튼 */}
           <Box sx={{ maxWidth: { xs: "100%", md: "50%" }, mb: { xs: 4, md: 0 } }}>
             <Typography
               variant="h2"
@@ -95,7 +73,7 @@ const HeroBanner = () => {
                 variant="subtitle1"
                 sx={{ fontWeight: 500, mt: 2, mb: 2, fontSize: "1.05rem" }}
               >
-                {recommendation
+                {recommendedItem
                   ? `${user.nickname} 님 맞춤 방송`
                   : `${user.nickname} 님을 위한 라이브 쇼핑`}
               </Typography>
@@ -103,7 +81,7 @@ const HeroBanner = () => {
             <Button
               variant="contained"
               size="large"
-              href={recommendation?.liveUrl ?? "/"}
+              href={recommendedItem?.liveUrl ?? "/"}
               sx={{
                 backgroundColor: "white",
                 color: "#FF5722",
@@ -119,10 +97,11 @@ const HeroBanner = () => {
                 fontSize: { xs: "0.9rem", sm: "1rem" },
               }}
             >
-              🎥 {recommendation?.title ?? "라이브 보러가기"}
+              🎥 {recommendedItem?.title ?? "라이브 보러가기"}
             </Button>
           </Box>
 
+          {/* 오른쪽: 썸네일 영역 */}
           <Box
             sx={{
               width: { xs: "100%", md: "45%" },
@@ -139,12 +118,15 @@ const HeroBanner = () => {
               overflow: "hidden",
             }}
           >
-            {recommendation ? (
+            {recommendedItem ? (
               <>
                 <img
-                  src={recommendation.thumbnail}
+                  src={recommendedItem.thumbnail}
                   alt="추천 썸네일"
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  onError={(e) => {
+                    // (e.target as HTMLImageElement).src = "/images/placeholder.png";
+                  }}
                 />
                 <Box
                   sx={{
