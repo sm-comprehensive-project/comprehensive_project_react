@@ -11,6 +11,7 @@ import ProductGrid from "../../components/product/ProductGrid.tsx";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import HeroBanner from "../../components/HeroBanner";
 import LiveNowRecommendSection from "../../components/recommend/LiveNowRecommendSection.tsx";
+import LiveNowSection2 from "../../components/live/LiveNowSection2.tsx";
 
 interface SellerInfo {
   name: string;
@@ -133,7 +134,7 @@ const MainPage: React.FC = () => {
       {/* 실시간 인기 방송 */}
       <SectionWrapper bgColor="#f8f9fa">
         <SectionTitle icon="🔥" title="실시간 인기 방송" />
-        <LiveNowSection data={liveData} />
+        <LiveNowSection2 data={liveData} />
       </SectionWrapper>
 
       {/* 예정된 방송 */}

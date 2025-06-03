@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -10,17 +10,15 @@ import {
   Badge,
   Collapse,
   IconButton,
+  Avatar,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import LiveTvIcon from "@mui/icons-material/LiveTv";
 import MenuIcon from "@mui/icons-material/Menu";
-import { useSearch } from "../../hooks/useSearch"; // 상단에 추가
-import { useNavigate } from "react-router-dom";
 
 const categories = [
   { emoji: "👗", label: "패션" },
@@ -41,13 +39,13 @@ const dummySearchResults = [
 
 const Header = () => {
   const navigate = useNavigate();
-
   const location = useLocation();
+
   interface User {
     nickname: string;
-    // 필요한 속성만 추가
   }
   const [user, setUser] = useState<User | null>(null);
+
   const getThemeStyle = () => {
     if (location.pathname.startsWith("/weeklyschedule")) {
       return {
@@ -75,12 +73,15 @@ const Header = () => {
 
   const { color: themeColor, gradient: themeGradient } = getThemeStyle();
 
+  // 검색창
   const [searchValue, setSearchValue] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
-  const [selected, setSelected] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  // 카테고리 토글
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [selected, setSelected] = useState<string | null>(null);
   const categoryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -88,25 +89,21 @@ const Header = () => {
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        console.log("🟢 세션에서 유저 정보 확인:", parsedUser);
         setUser(parsedUser);
-      } catch (err) {
-        console.warn("❌ 세션 유저 파싱 실패:", err);
+      } catch {
         setUser(null);
       }
     } else {
-      console.log("⚠️ 세션에 유저 없음 (로그아웃 상태)");
       setUser(null);
     }
 
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: globalThis.MouseEvent) => {
       if (
         searchRef.current &&
         !searchRef.current.contains(event.target as Node)
       ) {
         setIsSearchFocused(false);
       }
-
       if (
         categoryRef.current &&
         !categoryRef.current.contains(event.target as Node)
@@ -119,11 +116,13 @@ const Header = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // 카테고리 클릭
   const handleCategoryClick = (label: string) => {
     setSelected(label === selected ? null : label);
   };
-
   const toggleCategory = () => setIsCategoryOpen((prev) => !prev);
+
+  // 검색창 포커스/클리어
   const handleSearchFocus = () => {
     setIsSearchFocused(true);
     inputRef.current?.focus();
@@ -174,7 +173,7 @@ const Header = () => {
             height: "64px",
           }}
         >
-          {/* 로고 & 메뉴 */}
+          {/* 로고 & 카테고리 토글 */}
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <Typography
               component={Link}
@@ -208,7 +207,7 @@ const Header = () => {
               <MenuIcon sx={{ color: themeColor, fontSize: "1.5rem" }} />
             </Box>
 
-            {/* 네비게이션 */}
+            {/* 네비게이션 버튼들 */}
             <Box sx={{ display: { xs: "none", md: "flex" }, gap: 2 }}>
               <Button
                 component={Link}
@@ -286,6 +285,7 @@ const Header = () => {
                 }}
               />
 
+              {/* ✖️ 검색어 지우기 버튼 */}
               {searchValue && (
                 <IconButton
                   size="small"
@@ -376,48 +376,41 @@ const Header = () => {
             </Box>
           </Box>
 
-          {/* 사용자 메뉴 */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {/* 사용자 정보(Avatar + 닉네임) + 아이콘 영역 */}
+          {/* 사용자 정보(닉네임) + 아이콘 영역 */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             {user ? (
               <>
+              
+                {/* ❤️ 찜 아이콘 (로그인 시에만 보임) */}
+                <IconButton
+                  onClick={() => navigate("/liked")}
+                  sx={{
+                    color: "#555",
+                    "&:hover": { color: themeColor },
+                  }}
+                >
+                  <FavoriteBorderIcon />
+                </IconButton>
+                {/* 닉네임(“조현열 님”)만 클릭 가능하게 처리 */}
                 <Typography
                   variant="body2"
-                  sx={{ fontWeight: 600, cursor: "pointer" }}
-                  onClick={() => {
-                    alert(JSON.stringify(user, null, 2));
+                  onClick={() => navigate("/mypage")}
+                  sx={{
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    p: "4px 8px", // 클릭 가능한 영역에 padding 추가
+                    borderRadius: "4px", // 모서리를 부드럽게
+                    transition: "background 0.2s",
+                    "&:hover": {
+                      backgroundColor: "#f5f5f5", // Hover 시 배경색 변경
+                      color: themeColor, // Hover 시 글자색 강조
+                    },
                   }}
                 >
                   {user.nickname} 님
                 </Typography>
 
-                <Button
-                  onClick={async () => {
-                    try {
-                      const res = await fetch(
-                        "http://localhost:8088/api/user/logout",
-                        {
-                          method: "POST",
-                          credentials: "include",
-                        }
-                      );
-                      const result = await res.json();
-                      if (result.success) {
-                        setUser(null); // ✅ 상태 초기화
-                        window.location.href = "/";
-                      }
-                    } catch (err) {
-                      console.error("Logout failed:", err);
-                    }
-                  }}
-                  sx={{
-                    color: "#555",
-                    textTransform: "none",
-                    fontWeight: "500",
-                    "&:hover": { color: themeColor },
-                  }}
-                >
-                  로그아웃
-                </Button>
               </>
             ) : (
               <Button
@@ -433,22 +426,6 @@ const Header = () => {
                 로그인 / 회원가입
               </Button>
             )}
-
-            {/* ❤️ 찜 아이콘 */}
-            <IconButton
-              sx={{ color: "#555", "&:hover": { color: themeColor } }}
-            >
-              <FavoriteBorderIcon />
-            </IconButton>
-
-            {/* 🛍️ 장바구니 아이콘 */}
-            <IconButton
-              sx={{ color: "#555", "&:hover": { color: themeColor } }}
-            >
-              <Badge badgeContent={0} showZero={false} color="success">
-                <ShoppingBagOutlinedIcon />
-              </Badge>
-            </IconButton>
           </Box>
         </Box>
       </Box>
