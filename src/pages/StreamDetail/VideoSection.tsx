@@ -4,14 +4,12 @@ import { Box, Typography, Link, CircularProgress } from "@mui/material";
 import Hls from "hls.js";
 
 interface VideoSectionProps {
-  isLive: boolean;
   liveUrl: string;
   thumbnail: string;
   fixedHeight?: boolean; // 부모가 높이를 고정해서 줄 때 'true'로 전달
 }
 
 export default function VideoSection({
-  isLive,
   liveUrl,
   thumbnail,
   fixedHeight = false,
@@ -20,22 +18,36 @@ export default function VideoSection({
   const [m3u8Url, setM3u8Url] = useState<string | null>(null);
   // 2) 로딩 상태 (m3u8를 요청 중이면 true)
   const [loading, setLoading] = useState<boolean>(false);
+  // 3) 개발자 임시 입력용 live URL 상태
+  const [manualUrl, setManualUrl] = useState<string>("");
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  // 3) 라이브 URL을 proxy 서버로 보내서 m3u8 주소를 받아오는 함수
-  const fetchM3u8 = async () => {
-    if (!liveUrl) return;
-    setLoading(true);
+  /**
+   * 4) 라이브 URL 또는 수동 입력된 URL을 proxy 서버로 보내서 m3u8 주소를 받아오는 함수
+   *    customUrl이 전달되면 해당 URL을, 아니면 props로 전달된 liveUrl을 사용
+   */
+  const fetchM3u8 = async (customUrl?: string) => {
+    const targetUrl = customUrl || liveUrl;
+    console.log("[fetchM3u8] 호출됨. targetUrl:", targetUrl);
+    if (!targetUrl) {
+      console.warn("[fetchM3u8] URL이 없습니다.");
+      return;
+    }
 
-    // 간단히 kakao vs naver 구분 (필요하다면 더 세부 로직 추가 가능)
+    setLoading(true);
+    console.log("[fetchM3u8] loading 상태 true로 설정");
+
     let port: number;
-    if (liveUrl.includes("kakao")) {
+    if (targetUrl.includes("kakao")) {
       port = 5000;
-    } else if (liveUrl.includes("naver")) {
+      console.log("[fetchM3u8] kakao 플랫폼 감지, port=5000");
+    } else if (targetUrl.includes("naver")) {
       port = 4000;
+      console.log("[fetchM3u8] naver 플랫폼 감지, port=4000");
     } else {
-      console.warn("지원하지 않는 라이브 플랫폼:", liveUrl);
+      console.warn("[fetchM3u8] 지원하지 않는 플랫폼:", targetUrl);
       setLoading(false);
+      console.log("[fetchM3u8] loading 상태 false로 설정 (지원하지 않는 플랫폼)");
       return;
     }
 
@@ -43,56 +55,78 @@ export default function VideoSection({
       const res = await fetch(`http://localhost:${port}/get-live-url`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: liveUrl }),
+        body: JSON.stringify({ url: targetUrl }),
       });
+      console.log("[fetchM3u8] 프록시 서버 응답 상태:", res.status);
+
       if (!res.ok) throw new Error(`프록시 서버 오류: ${res.status}`);
       const json: { url?: string } = await res.json();
+      console.log("[fetchM3u8] 응답 JSON:", json);
+
       if (json.url) {
         setM3u8Url(json.url);
+        console.log("[fetchM3u8] m3u8Url 설정:", json.url);
       } else {
-        console.warn("m3u8 URL을 받아오지 못했습니다.");
+        console.warn("[fetchM3u8] m3u8 URL을 받아오지 못했습니다.");
       }
     } catch (err) {
-      console.error("m3u8 fetch 중 에러:", err);
+      console.error("[fetchM3u8] 에러 발생:", err);
     } finally {
       setLoading(false);
+      console.log("[fetchM3u8] loading 상태 false로 설정");
     }
   };
 
-  // 4) 컴포넌트가 마운트되거나 liveUrl이 바뀔 때, m3u8 URL을 가져오도록 감지
+  /**
+   * 5) 컴포넌트가 마운트되거나 props로 전달된 liveUrl이 바뀔 때 자동으로 m3u8 호출
+   */
   useEffect(() => {
-    if (isLive && liveUrl) {
+    console.log("[useEffect:liveUrl] liveUrl:", liveUrl);
+    if (liveUrl) {
       fetchM3u8();
     } else {
-      // 라이브가 아니면 m3u8Url을 초기화
       setM3u8Url(null);
+      console.log("[useEffect:liveUrl] m3u8Url 초기화됨");
     }
-  }, [isLive, liveUrl]);
+  }, [liveUrl]);
 
-  // 5) m3u8Url 값이 설정되면 Hls.js로 <video>에 붙여준다
+  /**
+   * 6) m3u8Url 값이 설정되면 Hls.js로 <video>에 스트림 연결
+   */
   useEffect(() => {
-    if (!m3u8Url || !videoRef.current) return;
+    console.log("[useEffect:m3u8Url] m3u8Url 변경됨:", m3u8Url);
+    if (!m3u8Url || !videoRef.current) {
+      console.log("[useEffect:m3u8Url] videoRef 없거나 m3u8Url 없음");
+      return;
+    }
 
     if (Hls.isSupported()) {
+      console.log("[useEffect:m3u8Url] Hls.js 지원됨. 스트리밍 시작");
       const hls = new Hls();
       hls.loadSource(m3u8Url);
       hls.attachMedia(videoRef.current);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        // 스트리밍 준비 완료
-        videoRef.current?.play().catch(() => {
-          /* 자동 재생이 막히는 브라우저용 catch */
+        console.log("[Hls.Events.MANIFEST_PARSED] 재생 시도");
+        videoRef.current?.play().catch((e) => {
+          console.error("[video.play 에러]", e);
         });
       });
 
       return () => {
+        console.log("[useEffect:m3u8Url] Hls.destroy 호출");
         hls.destroy();
       };
     } else if (videoRef.current.canPlayType("application/vnd.apple.mpegurl")) {
-      // Safari 등 HLS 네이티브 지원 브라우저
+      console.log("[useEffect:m3u8Url] 네이티브 HLS 지원. video.src 설정");
       videoRef.current.src = m3u8Url;
       videoRef.current.addEventListener("loadedmetadata", () => {
-        videoRef.current?.play().catch(() => {});
+        console.log("[video.loadedmetadata] 재생 시도");
+        videoRef.current?.play().catch((e) => {
+          console.error("[video.play 에러]", e);
+        });
       });
+    } else {
+      console.warn("[useEffect:m3u8Url] HLS 미지원 브라우저");
     }
   }, [m3u8Url]);
 
@@ -101,19 +135,68 @@ export default function VideoSection({
       sx={{
         position: "relative",
         width: "100%",
+        height: fixedHeight ? "100%" : "100%", // 무조건 부모가 정한 높이를 100% 차지
         borderRadius: 2,
         overflow: "hidden",
         boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
         bgcolor: "#000",
-
-        // ────────────────────────────────────────────────────────────
-        // 부모가 fixedHeight=true 로 props를 주면 전체 높이를 100% 차지.
-        // 그렇지 않으면 ‘paddingTop: 56.25%’(16:9 비율)로 세로 긴 박스.
-        height: fixedHeight ? "100%" : "auto",
-        paddingTop: fixedHeight ? 0 : "56.25%",
+        padding: 0, // 패딩 제거
       }}
     >
-      {isLive ? (
+      {/* 개발자용 입력 UI: 항상 표시 */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 8,
+          left: 8,
+          right: 8,
+          zIndex: 100,
+          display: "flex",
+          gap: 1,
+          alignItems: "center",
+          bgcolor: "rgba(255,255,255,0.9)",
+          px: 2,
+          py: 1,
+          borderRadius: 1,
+        }}
+      >
+        <input
+          type="text"
+          placeholder="테스트용 라이브 URL 입력"
+          value={manualUrl}
+          onChange={(e) => {
+            console.log("[input:onChange] manualUrl 변경:", e.target.value);
+            setManualUrl(e.target.value);
+          }}
+          style={{
+            flex: 1,
+            padding: "4px 8px",
+            borderRadius: 4,
+            border: "1px solid #ccc",
+          }}
+        />
+        <button
+          onClick={() => {
+            console.log(
+              "[button:onClick] 수동 fetchM3u8 실행. manualUrl:",
+              manualUrl
+            );
+            fetchM3u8(manualUrl);
+          }}
+          style={{
+            padding: "6px 10px",
+            backgroundColor: "#1976d2",
+            color: "white",
+            border: "none",
+            borderRadius: 4,
+            cursor: "pointer",
+          }}
+        >
+          불러오기
+        </button>
+      </Box>
+
+      {m3u8Url ? (
         <>
           {loading && (
             <Box
@@ -134,9 +217,7 @@ export default function VideoSection({
             </Box>
           )}
 
-          {/* ───────────────────────────────────────────────────────
-              실제 라이브인 경우: <video> 태그를 100%로 절대위치 채움
-          ─────────────────────────────────────────────────────── */}
+          {/* m3u8Url이 있을 때 <video>를 부모 크기에 맞춰 완전 표시 */}
           <Box
             component="video"
             ref={videoRef}
@@ -149,15 +230,13 @@ export default function VideoSection({
               left: 0,
               width: "100%",
               height: "100%",
-              objectFit: "contain",
+              objectFit: "contain", // 잘리지 않게 비율 유지
               backgroundColor: "black",
             }}
           />
         </>
       ) : (
-        /* ───────────────────────────────────────────────────────
-           라이브 준비 중인 경우: 썸네일 배경 + 반투명 오버레이 + 중앙 정렬된 메시지
-        ─────────────────────────────────────────────────────── */
+        /* m3u8Url이 없을 때: 썸네일 */
         <Box
           sx={{
             position: "absolute",
@@ -170,7 +249,6 @@ export default function VideoSection({
             backgroundPosition: "center",
           }}
         >
-          {/* 1) 반투명 어두운 오버레이 (가득 채움) */}
           <Box
             sx={{
               position: "absolute",
@@ -182,7 +260,6 @@ export default function VideoSection({
             }}
           />
 
-          {/* 2) 중앙 정렬된 텍스트 & LIVE 배지 */}
           <Box
             sx={{
               position: "absolute",
@@ -199,21 +276,13 @@ export default function VideoSection({
               px: 2,
             }}
           >
-            <Typography
-              variant="h5"
-              fontWeight="bold"
-              sx={{ color: "white", mb: 1 }}
-            >
+            <Typography variant="h5" fontWeight="bold" sx={{ color: "white", mb: 1 }}>
               라이브 방송 준비 중
             </Typography>
-            <Typography
-              variant="body1"
-              sx={{ color: "white", opacity: 0.9, mb: 2 }}
-            >
+            <Typography variant="body1" sx={{ color: "white", opacity: 0.9, mb: 2 }}>
               곧 시작합니다. 잠시만 기다려주세요.
             </Typography>
 
-            {/* ─── “라이브 바로 가기” 링크를 추가 ─── */}
             <Link
               href={liveUrl}
               target="_blank"
@@ -227,7 +296,6 @@ export default function VideoSection({
             >
               ▶ 라이브 바로 가기
             </Link>
-            {/* ──────────────────────────────────────── */}
 
             <Box
               sx={{
@@ -255,11 +323,7 @@ export default function VideoSection({
                 },
               }}
             >
-              <Typography
-                variant="h6"
-                fontWeight="bold"
-                sx={{ color: "white" }}
-              >
+              <Typography variant="h6" fontWeight="bold" sx={{ color: "white" }}>
                 LIVE
               </Typography>
             </Box>
