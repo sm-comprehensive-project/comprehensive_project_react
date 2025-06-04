@@ -68,7 +68,7 @@ const Footer = () => {
               <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 2 }}>
                 팔로우하기
               </Typography>
-              {["인스타그램", "페이스북", "유튜브", "카카오톡"].map((text) => (
+              {["나형진", "윤영학", "조현열", "천가온"].map((text) => (
                 <Typography key={text} variant="body2" sx={{ mb: 1, color: "#aaa" }}>
                   {text}
                 </Typography>

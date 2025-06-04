@@ -40,15 +40,16 @@ const AuthPage: React.FC = () => {
   });
 
   const categories = [
-    { emoji: "👗", label: "패션" },
-    { emoji: "💄", label: "뷰티" },
-    { emoji: "🥗", label: "푸드" },
-    { emoji: "🪑", label: "라이프" },
-    { emoji: "✈️", label: "여행/체험" },
-    { emoji: "🧸", label: "키즈" },
-    { emoji: "💻", label: "테크" },
-    { emoji: "⛺", label: "취미레저" },
-    { emoji: "🎫", label: "문화생활" },
+    { emoji: "👗", label: "패션의류" },
+    { emoji: "👜", label: "패션잡화" },
+    { emoji: "💄", label: "화장품_미용" },
+    { emoji: "💻", label: "디지털_가전" },
+    { emoji: "🪑", label: "가구_인테리어" },
+    { emoji: "🧸", label: "출산_육아" },
+    { emoji: "🥗", label: "식품" },
+    { emoji: "⛺", label: "스포츠_레저" },
+    { emoji: "🧼", label: "생활_건강" },
+    { emoji: "✈️", label: "여가_생활편의" },
   ];
 
   useEffect(() => {
@@ -245,9 +246,7 @@ const AuthPage: React.FC = () => {
                 </Tabs>
               </Box>
 
-              <Box
-                sx={{ p: { xs: 3, sm: 5 }, minHeight: tab === 0 ? 360 : 520 }}
-              >
+              <Box sx={{ p: { xs: 3, sm: 5 }, minHeight: tab === 0 ? 360 : 520 }}>
                 {tab === 0 ? (
                   <LoginForm
                     loginData={loginData}

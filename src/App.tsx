@@ -13,6 +13,8 @@ import Watch from "./pages/StreamDetail/WatchPage";
 import SearchResultPage from "./pages/search/SearchResultPage";
 import LikedPage from "./pages/user/LikedPage"; // ✅ 추가
 import MyPage from "./pages/user/MyPage";
+import CategoryResultPage from "./pages/search/CategoryResultPage"; // ✅ 추가된 카테고리 검색 페이지
+
 
 const App: React.FC = () => {
   return (
@@ -26,6 +28,7 @@ const App: React.FC = () => {
         <Route path="/videotest" element={<Layout><VideoTest /></Layout>} /> {/* ✅ 테스트용 추가 */}
         <Route path="/watch" element={<Layout><Watch/></Layout>} /> {/* ✅ 테스트용 추가 */}
         <Route path="/watch/:liveId" element={<Layout><Watch/></Layout>} /> {/* ✅ liveId 파라미터를 받아오도록 수정 */}
+        <Route path="/search/category" element={<Layout><CategoryResultPage /></Layout>} /> {/* ✅ 카테고리 검색 결과 페이지 */}
         <Route path="/search" element={<Layout><SearchResultPage /></Layout>} />
         <Route path="/liked" element={<Layout><LikedPage /></Layout>} /> {/* ✅ 찜한 방송 페이지 */}
         <Route path="/mypage" element={<Layout><MyPage /></Layout>} />

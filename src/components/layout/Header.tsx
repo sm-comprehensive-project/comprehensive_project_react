@@ -10,25 +10,25 @@ import {
   Badge,
   Collapse,
   IconButton,
-  Avatar,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import LiveTvIcon from "@mui/icons-material/LiveTv";
 import MenuIcon from "@mui/icons-material/Menu";
 
 const categories = [
-  { emoji: "👗", label: "패션" },
-  { emoji: "💄", label: "뷰티" },
-  { emoji: "🥗", label: "푸드" },
-  { emoji: "🪑", label: "라이프" },
-  { emoji: "✈️", label: "여행/체험" },
-  { emoji: "🧸", label: "키즈" },
-  { emoji: "💻", label: "테크" },
-  { emoji: "⛺", label: "취미레저" },
+  { emoji: "👗", label: "패션의류", display: "패션의류" },
+  { emoji: "👜", label: "패션잡화", display: "패션잡화" },
+  { emoji: "💄", label: "화장품_미용", display: "미용" },
+  { emoji: "💻", label: "디지털_가전", display: "가전" },
+  { emoji: "🪑", label: "가구_인테리어", display: "인테리어" },
+  { emoji: "🧸", label: "출산_육아", display: "육아" },
+  { emoji: "🥗", label: "식품", display: "식품" },
+  { emoji: "⛺", label: "스포츠_레저", display: "스포츠" },
+  { emoji: "🧼", label: "생활_건강", display: "건강" },
+  { emoji: "✈️", label: "여가_생활편의", display: "생활편의" },
 ];
 
 const dummySearchResults = [
@@ -118,7 +118,12 @@ const Header = () => {
 
   // 카테고리 클릭
   const handleCategoryClick = (label: string) => {
+    // 선택 상태 업데이트
     setSelected(label === selected ? null : label);
+    // 선택된 카테고리 결과 페이지로 이동
+    navigate(`/search/category?category=${encodeURIComponent(label)}`);
+    // 토글 메뉴 닫기
+    setIsCategoryOpen(false);
   };
   const toggleCategory = () => setIsCategoryOpen((prev) => !prev);
 
@@ -377,11 +382,9 @@ const Header = () => {
           </Box>
 
           {/* 사용자 정보(Avatar + 닉네임) + 아이콘 영역 */}
-          {/* 사용자 정보(닉네임) + 아이콘 영역 */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             {user ? (
               <>
-              
                 {/* ❤️ 찜 아이콘 (로그인 시에만 보임) */}
                 <IconButton
                   onClick={() => navigate("/liked")}
@@ -399,18 +402,17 @@ const Header = () => {
                   sx={{
                     fontWeight: 600,
                     cursor: "pointer",
-                    p: "4px 8px", // 클릭 가능한 영역에 padding 추가
-                    borderRadius: "4px", // 모서리를 부드럽게
+                    p: "4px 8px",
+                    borderRadius: "4px",
                     transition: "background 0.2s",
                     "&:hover": {
-                      backgroundColor: "#f5f5f5", // Hover 시 배경색 변경
-                      color: themeColor, // Hover 시 글자색 강조
+                      backgroundColor: "#f5f5f5",
+                      color: themeColor,
                     },
                   }}
                 >
                   {user.nickname} 님
                 </Typography>
-
               </>
             ) : (
               <Button
@@ -491,7 +493,7 @@ const Header = () => {
                 {cat.emoji}
               </Box>
               <Typography variant="body2" sx={{ mt: 1 }}>
-                {cat.label}
+                {cat.display}
               </Typography>
             </Box>
           ))}

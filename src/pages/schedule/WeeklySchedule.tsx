@@ -1,4 +1,4 @@
-// 파일: SchedulePage.tsx
+// 파일: src/pages/SchedulePage.tsx
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
@@ -19,9 +19,10 @@ import {
   Tab,
   ButtonGroup,
   IconButton,
+  CircularProgress,
 } from "@mui/material";
 import dayjs from "dayjs";
-import { Link } from "react-router-dom"; // ← Link 추가
+import { Link } from "react-router-dom";
 
 // 🔷 타입 정의
 type ScheduleCardItem = {
@@ -66,9 +67,7 @@ const FALLBACK_THUMBNAIL =
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   const days = ["일", "월", "화", "수", "목", "금", "토"];
-  return `${date.getMonth() + 1}월 ${date.getDate()}일 (${
-    days[date.getDay()]
-  })`;
+  return `${date.getMonth() + 1}월 ${date.getDate()}일 (${days[date.getDay()]})`;
 };
 
 // 5일치(어제, 오늘, 내일, …) 날짜 배열 생성
@@ -110,6 +109,7 @@ const SchedulePage: React.FC = () => {
   >([]);
 
   const [likedIds, setLikedIds] = useState<string[]>([]);
+  const [loadingSchedules, setLoadingSchedules] = useState<boolean>(false);
   // ─────────────────────────────────────────────────────────────────────────────
 
   // ─── API 응답을 ScheduleCardItem 형태로 바꿔주는 함수 ─────────────────────────────
@@ -144,6 +144,7 @@ const SchedulePage: React.FC = () => {
 
   // ─── 스케줄 데이터 & 찜 목록 불러오기 ───────────────────────────────────────────
   const fetchData = async () => {
+    setLoadingSchedules(true);
     try {
       const [kakaoRes, naverRes] = await Promise.all([
         fetch("http://localhost:8088/damoa/schedule/kakao"),
@@ -158,6 +159,8 @@ const SchedulePage: React.FC = () => {
       setNaverScheduleData(transformData(naverData, "naver"));
     } catch (err) {
       console.error("스케줄 데이터 불러오기 실패:", err);
+    } finally {
+      setLoadingSchedules(false);
     }
   };
 
@@ -340,357 +343,178 @@ const SchedulePage: React.FC = () => {
             {formatDate(selectedDate)})
           </Typography>
 
-          <Box
-            sx={{
-              display: viewMode === "grid" ? "grid" : "flex",
-              gridTemplateColumns:
-                viewMode === "grid"
-                  ? {
-                      xs: "1fr",
-                      sm: "repeat(2, 1fr)",
-                      md: "repeat(3, 1fr)",
-                      lg: "repeat(4, 1fr)",
-                    }
-                  : undefined,
-              flexDirection: viewMode === "list" ? "column" : undefined,
-              gap: 2,
-            }}
-          >
-            {(groupedSchedule[selectedDate] || []).map((item) =>
-              viewMode === "list" ? (
-                // ─── 리스트형 UI ─────────────────────────────────
-                <Box
-                  key={item.id}
-                  sx={{
-                    display: "flex",
-                    gap: 2,
-                    p: 2,
-                    borderBottom: "1px solid #eee",
-                    borderRadius: 1,
-                    backgroundColor: "#fafafa",
-                    position: "relative",
-                    overflow: "hidden",
-                    opacity: isStarted(item) ? 1 : 0.5,
-                    filter: isStarted(item)
-                      ? "none"
-                      : "grayscale(70%)",
-                  }}
-                >
-                  {/* ── 왼쪽: 썸네일 (160px 고정) ── */}
+          {loadingSchedules ? (
+            <Box sx={{ textAlign: "center", py: 6 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : (groupedSchedule[selectedDate] || []).length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 6 }}>
+              <Typography color="text.secondary">
+                해당 날짜에 방송 일정이 없습니다.
+              </Typography>
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                display: viewMode === "grid" ? "grid" : "flex",
+                gridTemplateColumns:
+                  viewMode === "grid"
+                    ? {
+                        xs: "1fr",
+                        sm: "repeat(2, 1fr)",
+                        md: "repeat(3, 1fr)",
+                        lg: "repeat(4, 1fr)",
+                      }
+                    : undefined,
+                flexDirection: viewMode === "list" ? "column" : undefined,
+                gap: 2,
+              }}
+            >
+              {(groupedSchedule[selectedDate] || []).map((item) =>
+                viewMode === "list" ? (
+                  // ─── 리스트형 UI ─────────────────────────────────
                   <Box
+                    key={item.id}
                     sx={{
-                      width: 160,
-                      height: 90,
+                      display: "flex",
+                      gap: 2,
+                      p: 2,
+                      borderBottom: "1px solid #eee",
                       borderRadius: 1,
-                      backgroundColor: item.thumbnail
-                        ? "transparent"
-                        : "#ddd", // 썸네일이 없으면 회색 박스
-                      backgroundImage: item.thumbnail
-                        ? `url(${item.thumbnail})`
-                        : "none",
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
+                      backgroundColor: "#fafafa",
                       position: "relative",
-                      flexShrink: 0,
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      color: "#666",
-                      fontSize: "0.8rem",
+                      overflow: "hidden",
+                      opacity: isStarted(item) ? 1 : 0.5,
+                      filter: isStarted(item)
+                        ? "none"
+                        : "grayscale(70%)",
                     }}
                   >
-                    {/* 썸네일이 없을 때 “이미지 없음” 표시 */}
-                    {!item.thumbnail && <>이미지 없음</>}
-
-                    {/* 방송 전: 큰 시간 오버레이 */}
-                    {!isStarted(item) && item.thumbnail && (
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          inset: 0,
-                          backgroundColor: "rgba(0,0,0,0.5)",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            color: "#fff",
-                            fontSize: "1.5rem",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {item.time} 방송 시작
-                        </Typography>
-                      </Box>
-                    )}
-
-                    {/* 방송 중: 작은 LIVE 뱃지 */}
-                    {isStarted(item) && item.thumbnail && (
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          top: 4,
-                          right: 4,
-                          backgroundColor: "red",
-                          color: "#fff",
-                          fontSize: "0.7rem",
-                          fontWeight: "bold",
-                          px: 1,
-                          py: "2px",
-                          borderRadius: "4px",
-                          zIndex: 2,
-                        }}
-                      >
-                        LIVE
-                      </Box>
-                    )}
-
-                    {/* 플랫폼 뱃지 */}
-                    {item.thumbnail && (
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          top: 4,
-                          left: 4,
-                          backgroundColor:
-                            item.platform === "kakao"
-                              ? "#FEE500"
-                              : "#03C75A",
-                          color: "#000",
-                          fontWeight: "bold",
-                          fontSize: "0.7rem",
-                          px: 1,
-                          py: "2px",
-                          borderRadius: "4px",
-                        }}
-                      >
-                        {item.platform.toUpperCase()}
-                      </Box>
-                    )}
-                  </Box>
-
-                  {/* ── 중간: 방송 정보 (flex:1) ── */}
-                  <Box
-                    sx={{
-                      flex: 1,
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Typography
-                      fontWeight={600}
-                      fontSize="0.95rem"
-                      noWrap
-                    >
-                      {item.title}
-                    </Typography>
+                    {/* ── 왼쪽: 썸네일 (160px 고정) ── */}
                     <Box
                       sx={{
+                        width: 160,
+                        height: 90,
+                        borderRadius: 1,
+                        backgroundColor: item.thumbnail
+                          ? "transparent"
+                          : "#ddd", // 썸네일이 없으면 회색 박스
+                        backgroundImage: item.thumbnail
+                          ? `url(${item.thumbnail})`
+                          : "none",
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                        position: "relative",
+                        flexShrink: 0,
                         display: "flex",
+                        justifyContent: "center",
                         alignItems: "center",
-                        gap: 1,
-                        mt: 0.5,
+                        color: "#666",
+                        fontSize: "0.8rem",
                       }}
                     >
-                      <Tv size={14} />
-                      <Typography
-                        variant="body2"
-                        sx={{ fontSize: "0.75rem", color: "#666" }}
-                      >
-                        {item.channel}
-                      </Typography>
-                    </Box>
-                  </Box>
+                      {/* 썸네일이 없을 때 “이미지 없음” 표시 */}
+                      {!item.thumbnail && <>이미지 없음</>}
 
-                  {/* ── 오른쪽: 찜 버튼 + 방송 보러 가기 버튼(세로 정렬) ── */}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 1,
-                    }}
-                  >
-                    {/* 찜 버튼: 좋아요 상태에 따라 하트 채워짐 */}
-                    <IconButton
-                      onClick={() => handleLikeToggle(item.liveId)}
-                    >
-                      {likedIds.includes(item.liveId) ? (
-                        <HeartFilled
-                          fill="#e53935"
-                          stroke="none"
-                        />
-                      ) : (
-                        <HeartOutline />
+                      {/* 방송 전: 큰 시간 오버레이 */}
+                      {!isStarted(item) && item.thumbnail && (
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            inset: 0,
+                            backgroundColor: "rgba(0,0,0,0.5)",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              color: "#fff",
+                              fontSize: "1rem",
+                              fontWeight: "bold",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {item.time} 방송 시작
+                          </Typography>
+                        </Box>
                       )}
-                    </IconButton>
 
-                    {/* 방송 중일 때만 “방송 보러 가기” 표시 */}
-                    {isStarted(item) && (
-                      <Button
-                        component={Link}
-                        to={`/watch/${item.liveId}`} // ← 내부 라우트로 이동
-                        variant="outlined" // 디자인을 튀지 않도록 outlined 로 변경
-                        size="small"
-                        sx={{
-                          textTransform: "none",
-                          fontSize: "0.8rem",
-                          borderColor: "#3f51b5",
-                          color: "#3f51b5",
-                          "&:hover": {
-                            backgroundColor: "#3f51b5",
-                            color: "#fff",
-                          },
-                        }}
-                      >
-                        방송 보러 가기
-                      </Button>
-                    )}
-                  </Box>
-                </Box>
-              ) : (
-                // ─── 카드형 UI ───────────────────────────────────────────────
-                <Card
-                  key={item.id}
-                  sx={{
-                    borderRadius: 2,
-                    overflow: "hidden",
-                    position: "relative",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-                    transition: "all 0.2s",
-                    opacity: isStarted(item) ? 1 : 0.5,
-                    filter: isStarted(item)
-                      ? "none"
-                      : "grayscale(70%)",
-                    "&:hover": {
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                      transform: "translateY(-2px)",
-                    },
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  {/* ── 이미지 & 오버레이 ── */}
-                  <Box sx={{ position: "relative" }}>
-                    {item.thumbnail ? (
-                      <CardMedia
-                        component="div"
-                        sx={{
-                          height: 160,
-                          backgroundImage: `url(${item.thumbnail})`,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                        }}
-                      />
-                    ) : (
-                      // 썸네일이 없을 때 회색 배경 & “이미지 없음” 텍스트
-                      <Box
-                        sx={{
-                          height: 160,
-                          backgroundColor: "#ddd",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          color: "#666",
-                        }}
-                      >
-                        이미지 없음
-                      </Box>
-                    )}
-
-                    {/* 방송 전: 큰 시간 오버레이 */}
-                    {!isStarted(item) && item.thumbnail && (
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          inset: 0,
-                          backgroundColor: "rgba(0,0,0,0.5)",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                        }}
-                      >
-                        <Typography
+                      {/* 방송 중: 작은 LIVE 뱃지 */}
+                      {isStarted(item) && item.thumbnail && (
+                        <Box
                           sx={{
+                            position: "absolute",
+                            top: 4,
+                            right: 4,
+                            backgroundColor: "red",
                             color: "#fff",
-                            fontSize: "1.5rem",
+                            fontSize: "0.7rem",
                             fontWeight: "bold",
+                            px: 1,
+                            py: "2px",
+                            borderRadius: "4px",
+                            zIndex: 2,
                           }}
                         >
-                          {item.time} 방송 시작
-                        </Typography>
-                      </Box>
-                    )}
+                          LIVE
+                        </Box>
+                      )}
 
-                    {/* 방송 중: 작은 LIVE 뱃지 */}
-                    {isStarted(item) && item.thumbnail && (
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          top: 8,
-                          right: 8,
-                          backgroundColor: "red",
-                          color: "#fff",
-                          fontSize: "0.7rem",
-                          fontWeight: "bold",
-                          px: 1,
-                          py: "2px",
-                          borderRadius: "4px",
-                          zIndex: 2,
-                        }}
-                      >
-                        LIVE
-                      </Box>
-                    )}
+                      {/* 플랫폼 뱃지 */}
+                      {item.thumbnail && (
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: 4,
+                            left: 4,
+                            backgroundColor:
+                              item.platform === "kakao"
+                                ? "#FEE500"
+                                : "#03C75A",
+                            color: "#000",
+                            fontWeight: "bold",
+                            fontSize: "0.7rem",
+                            px: 1,
+                            py: "2px",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          {item.platform.toUpperCase()}
+                        </Box>
+                      )}
+                    </Box>
 
-                    {/* 플랫폼 뱃지 */}
-                    {item.thumbnail && (
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          top: 8,
-                          left: 8,
-                          backgroundColor:
-                            item.platform === "kakao"
-                              ? "#FEE500"
-                              : "#03C75A",
-                          color: "#000",
-                          fontWeight: 700,
-                          fontSize: "0.7rem",
-                          px: 1,
-                          py: "2px",
-                          borderRadius: "4px",
-                        }}
-                      >
-                        {item.platform.toUpperCase()}
-                      </Box>
-                    )}
-                  </Box>
-
-                  {/* ── 카드 콘텐츠 ── */}
-                  <CardContent sx={{ p: 1.5 }}>
-                    <Typography
-                      fontWeight={600}
-                      fontSize="0.9rem"
-                      noWrap
-                    >
-                      {item.title}
-                    </Typography>
+                    {/* ── 중간: 방송 정보 (flex:1) ── */}
                     <Box
                       sx={{
+                        flex: 1,
                         display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        mt: 0.5,
+                        flexDirection: "column",
+                        justifyContent: "center",
                       }}
                     >
+                      <Typography
+                        fontWeight={600}
+                        fontSize="0.95rem"
+                        noWrap
+                        sx={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {item.title}
+                      </Typography>
                       <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          mt: 0.5,
+                        }}
                       >
                         <Tv size={14} />
                         <Typography
@@ -700,49 +524,241 @@ const SchedulePage: React.FC = () => {
                           {item.channel}
                         </Typography>
                       </Box>
-                      <IconButton
-                        onClick={() => handleLikeToggle(item.liveId)}
-                      >
+                    </Box>
+
+                    {/* ── 오른쪽: 찜 버튼 + 방송 보러 가기 버튼(세로 정렬) ── */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 1,
+                      }}
+                    >
+                      {/* 찜 버튼: 좋아요 상태에 따라 하트 채워짐 */}
+                      <IconButton onClick={() => handleLikeToggle(item.liveId)}>
                         {likedIds.includes(item.liveId) ? (
-                          <HeartFilled
-                            fill="#e53935"
-                            stroke="none"
-                          />
+                          <HeartFilled fill="#e53935" stroke="none" />
                         ) : (
                           <HeartOutline />
                         )}
                       </IconButton>
-                    </Box>
-                  </CardContent>
 
-                  {/* ── 방송 중일 때만: 방송 보러 가기 버튼 ── */}
-                  {isStarted(item) && (
-                    <Box sx={{ px: 1, py: 1 }}>
-                      <Button
-                        component={Link}
-                        to={`/watch/${item.liveId}`} // ← 내부 라우트로 이동
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                        sx={{
-                          textTransform: "none",
-                          fontSize: "0.8rem",
-                          borderColor: "#3f51b5",
-                          color: "#3f51b5",
-                          "&:hover": {
-                            backgroundColor: "#3f51b5",
+                      {/* 방송 중일 때만 “방송 보러 가기” 표시 */}
+                      {isStarted(item) && (
+                        <Button
+                          component={Link}
+                          to={`/watch/${item.liveId}`} // ← 내부 라우트로 이동
+                          variant="outlined"
+                          size="small"
+                          sx={{
+                            textTransform: "none",
+                            fontSize: "0.8rem",
+                            borderColor: "#3f51b5",
+                            color: "#3f51b5",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            "&:hover": {
+                              backgroundColor: "#3f51b5",
+                              color: "#fff",
+                            },
+                          }}
+                        >
+                          방송 보러 가기
+                        </Button>
+                      )}
+                    </Box>
+                  </Box>
+                ) : (
+                  // ─── 카드형 UI ───────────────────────────────────────────────
+                  <Card
+                    key={item.id}
+                    sx={{
+                      borderRadius: 2,
+                      overflow: "hidden",
+                      position: "relative",
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                      transition: "all 0.2s",
+                      opacity: isStarted(item) ? 1 : 0.5,
+                      filter: isStarted(item) ? "none" : "grayscale(70%)",
+                      "&:hover": {
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                        transform: "translateY(-2px)",
+                      },
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    {/* ── 이미지 & 오버레이 ── */}
+                    <Box sx={{ position: "relative" }}>
+                      {item.thumbnail ? (
+                        <CardMedia
+                          component="div"
+                          sx={{
+                            height: 160,
+                            backgroundImage: `url(${item.thumbnail})`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                          }}
+                        />
+                      ) : (
+                        // 썸네일이 없을 때 회색 배경 & “이미지 없음” 텍스트
+                        <Box
+                          sx={{
+                            height: 160,
+                            backgroundColor: "#ddd",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            color: "#666",
+                          }}
+                        >
+                          이미지 없음
+                        </Box>
+                      )}
+
+                      {/* 방송 전: 큰 시간 오버레이 */}
+                      {!isStarted(item) && item.thumbnail && (
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            inset: 0,
+                            backgroundColor: "rgba(0,0,0,0.5)",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              color: "#fff",
+                              fontSize: "1.5rem",
+                              fontWeight: "bold",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {item.time} 방송 시작
+                          </Typography>
+                        </Box>
+                      )}
+
+                      {/* 방송 중: 작은 LIVE 뱃지 */}
+                      {isStarted(item) && item.thumbnail && (
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            backgroundColor: "red",
                             color: "#fff",
-                          },
+                            fontSize: "0.7rem",
+                            fontWeight: "bold",
+                            px: 1,
+                            py: "2px",
+                            borderRadius: "4px",
+                            zIndex: 2,
+                          }}
+                        >
+                          LIVE
+                        </Box>
+                      )}
+
+                      {/* 플랫폼 뱃지 */}
+                      {item.thumbnail && (
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: 8,
+                            left: 8,
+                            backgroundColor:
+                              item.platform === "kakao" ? "#FEE500" : "#03C75A",
+                            color: "#000",
+                            fontWeight: 700,
+                            fontSize: "0.7rem",
+                            px: 1,
+                            py: "2px",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          {item.platform.toUpperCase()}
+                        </Box>
+                      )}
+                    </Box>
+
+                    {/* ── 카드 콘텐츠 ── */}
+                    <CardContent sx={{ p: 1.5 }}>
+                      <Typography
+                        fontWeight={600}
+                        fontSize="0.9rem"
+                        noWrap
+                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
+                      >
+                        {item.title}
+                      </Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          mt: 0.5,
                         }}
                       >
-                        방송 보러 가기
-                      </Button>
-                    </Box>
-                  )}
-                </Card>
-              )
-            )}
-          </Box>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Tv size={14} />
+                          <Typography
+                            variant="body2"
+                            sx={{ fontSize: "0.75rem", color: "#666" }}
+                          >
+                            {item.channel}
+                          </Typography>
+                        </Box>
+                        <IconButton onClick={() => handleLikeToggle(item.liveId)}>
+                          {likedIds.includes(item.liveId) ? (
+                            <HeartFilled fill="#e53935" stroke="none" />
+                          ) : (
+                            <HeartOutline />
+                          )}
+                        </IconButton>
+                      </Box>
+                    </CardContent>
+
+                    {/* ── 방송 중일 때만: 방송 보러 가기 버튼 ── */}
+                    {isStarted(item) && (
+                      <Box sx={{ px: 1, py: 1 }}>
+                        <Button
+                          component={Link}
+                          to={`/watch/${item.liveId}`} // ← 내부 라우트로 이동
+                          variant="outlined"
+                          size="small"
+                          fullWidth
+                          sx={{
+                            textTransform: "none",
+                            fontSize: "0.8rem",
+                            borderColor: "#3f51b5",
+                            color: "#3f51b5",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            "&:hover": {
+                              backgroundColor: "#3f51b5",
+                              color: "#fff",
+                            },
+                          }}
+                        >
+                          방송 보러 가기
+                        </Button>
+                      </Box>
+                    )}
+                  </Card>
+                )
+              )}
+            </Box>
+          )}
         </Box>
       </Box>
     </Box>

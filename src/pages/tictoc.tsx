@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+// src/pages/LivePage.tsx
+import React, { useState, useEffect } from "react";
 import { Tv, Clock, Star, Heart } from "lucide-react";
 import {
   Box,
@@ -11,69 +11,37 @@ import {
   Button,
   Tabs,
   Tab,
+  CircularProgress,
 } from "@mui/material";
 
-// 더미 데이터
-const dummyLiveData = [
-  {
-    id: 1,
-    title: "[fkfkfk] 봄맞이 패션 아이템 특가전",
-    viewers: 1250,
-    duration: "01:23:45",
-    channel: "DAMOA 패션",
-    thumbnail: "/images/fashion-live-stream.png",
-    isHot: true,
-    category: "패션",
-    rating: 4.8,
-    reviews: 120,
-  },
-  {
-    id: 2,
-    title: "[라이브] 프리미엄 스킨케어 브랜드 론칭 방송",
-    viewers: 980,
-    duration: "00:45:30",
-    channel: "DAMOA 뷰티",
-    thumbnail: "/images/beauty-live-stream.png",
-    isHot: false,
-    category: "뷰티",
-    rating: 4.6,
-    reviews: 85,
-  },
-  {
-    id: 3,
-    title: "[라이브] 건강한 식단을 위한 유기농 식품 기획전",
-    viewers: 750,
-    duration: "00:30:15",
-    channel: "DAMOA 푸드",
-    thumbnail: "/images/food-live-stream.png",
-    isHot: true,
-    category: "푸드",
-    rating: 4.9,
-    reviews: 95,
-  },
-  {
-    id: 4,
-    title: "[라이브] 인테리어 소품 모음전 - 봄 시즌 특집",
-    viewers: 620,
-    duration: "01:05:20",
-    channel: "DAMOA 라이프",
-    thumbnail: "/images/interior-live-stream.png",
-    isHot: false,
-    category: "라이프",
-    rating: 4.7,
-    reviews: 65,
-  },
-];
+// API에서 받아오는 라이브 방송 아이템 타입
+interface LiveItem {
+  id: string;
+  title: string;
+  liveUrl: string;
+  channelUrl: string;
+  thumbnail: string;
+  seller: string;
+  platform: "tiktok" | string;
+  createdAt: string;
+  category: string;
+}
 
-const LivePage = () => {
-  const [tabValue, setTabValue] = useState("all");
-  const [favorites, setFavorites] = useState<number[]>([]);
+// 페이지 컴포넌트
+const LivePage: React.FC = () => {
+  // 탭 값: "all" 혹은 실제 카테고리와 동일하게 설정
+  const [tabValue, setTabValue] = useState<string>("all");
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [liveList, setLiveList] = useState<LiveItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
+  // 탭 변경 핸들러
   const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
     setTabValue(newValue);
   };
 
-  const toggleFavorite = (id: number) => {
+  // 찜 토글 핸들러
+  const toggleFavorite = (id: string) => {
     setFavorites((prev) => {
       const updated = prev.includes(id)
         ? prev.filter((v) => v !== id)
@@ -83,38 +51,27 @@ const LivePage = () => {
     });
   };
 
-  const getCategoryFromTab = (tab: string) => {
-    switch (tab) {
-      case "fashion":
-        return "패션";
-      case "beauty":
-        return "뷰티";
-      case "food":
-        return "푸드";
-      case "life":
-        return "라이프";
-      case "travel":
-        return "여행/체험";
-      case "kids":
-        return "키즈";
-      case "tech":
-        return "테크";
-      case "hobby":
-        return "취미레저";
-      default:
-        return "";
-    }
-  };
+  // 컴포넌트 마운트 시 API 호출
+  useEffect(() => {
+    const fetchLiveData = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("http://localhost:8088/tiktok"); // API 엔드포인트
+        const data: LiveItem[] = await res.json();
+        setLiveList(data);
+      } catch (err) {
+        console.error("라이브 데이터 조회 실패:", err);
+        setLiveList([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLiveData();
+  }, []);
 
+  // 현재 탭 기준 필터링 (tabValue === "all" 이면 전체, 아니면 카테고리 일치)
   const filteredData =
-    tabValue === "all"
-      ? dummyLiveData
-      : dummyLiveData.filter(
-          (item) => item.category === getCategoryFromTab(tabValue)
-        );
-
-  console.log("📺 현재 선택된 탭:", tabValue);
-  console.log("🎯 필터링된 방송 수:", filteredData.length);
+    tabValue === "all" ? liveList : liveList.filter((item) => item.category === tabValue);
 
   return (
     <Box sx={{ minHeight: "100vh", backgroundColor: "#f8f8f8" }}>
@@ -126,7 +83,7 @@ const LivePage = () => {
           color: "white",
         }}
       >
-        <Box sx={{ maxWidth: "1200px", margin: "0 auto", px: 2 }}>
+        <Box sx={{ maxWidth: "1200px", mx: "auto", px: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
             <Tv style={{ marginRight: 8 }} />
             <Typography variant="h4" fontWeight="bold">
@@ -134,14 +91,13 @@ const LivePage = () => {
             </Typography>
           </Box>
           <Typography variant="body1" sx={{ opacity: 0.9 }}>
-            인기 틱톡 크리에이터들의 라이브 방송을 시청하고 특별한 혜택을
-            받아보세요.
+            인기 틱톡 크리에이터들의 라이브 방송을 시청하고 특별한 혜택을 받아보세요.
           </Typography>
         </Box>
       </Box>
 
-      {/* 탭 */}
-      <Box sx={{ maxWidth: "1200px", margin: "0 auto", px: 2, py: 3 }}>
+      {/* 탭 (카테고리) */}
+      <Box sx={{ maxWidth: "1200px", mx: "auto", px: 2, py: 3 }}>
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
@@ -163,133 +119,127 @@ const LivePage = () => {
           }}
         >
           <Tab value="all" label="전체" />
-          <Tab value="fashion" label="패션" />
-          <Tab value="beauty" label="뷰티" />
-          <Tab value="food" label="푸드" />
-          <Tab value="life" label="라이프" />
-          <Tab value="travel" label="여행/체험" />
-          <Tab value="kids" label="키즈" />
-          <Tab value="tech" label="테크" />
-          <Tab value="hobby" label="취미레저" />
+          <Tab value="패션의류" label="패션의류" />
+          <Tab value="패션잡화" label="패션잡화" />
+          <Tab value="식품" label="식품" />
+          <Tab value="화장품_미용" label="화장품/미용" />
+          <Tab value="디지털_인테리어" label="디지털/인테리어" />
+          <Tab value="생활_편의" label="생활/편의" />
         </Tabs>
 
-        {/* 카드 리스트 */}
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "1fr",
-              sm: "1fr 1fr",
-              md: "1fr 1fr 1fr",
-              lg: "1fr 1fr 1fr 1fr",
-            },
-            gap: 3,
-          }}
-        >
-          {filteredData.map((item) => (
-            <Card
-              key={item.id}
-              sx={{ borderRadius: 2, overflow: "hidden", boxShadow: 3 }}
-            >
-              <Box sx={{ position: "relative" }}>
-                <CardMedia
-                  component="div"
-                  sx={{
-                    height: 220,
-                    backgroundImage: `url(${item.thumbnail})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                  }}
-                />
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: 10,
-                    left: 10,
-                    display: "flex",
-                    gap: 1,
-                  }}
-                >
-                  <Badge label="LIVE" color="#FE2C55" />
-                  {item.isHot && <Badge label="HOT" color="#FF9500" />}
-                </Box>
-                <Box sx={viewerStyle}>
-                  {item.viewers.toLocaleString()}명 시청 중
-                </Box>
-                <Box sx={durationStyle}>
-                  <Clock size={14} style={{ marginRight: 4 }} />
-                  {item.duration}
-                </Box>
-              </Box>
-
-              <CardContent>
-                <Typography
-                  variant="subtitle1"
-                  fontWeight={600}
-                  sx={{
-                    height: "2.8rem",
-                    overflow: "hidden",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    mb: 1,
-                    fontSize: "0.95rem",
-                  }}
-                >
-                  {item.title}
-                </Typography>
-
-                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                  <Tv size={14} style={{ marginRight: 4, color: "#666" }} />
-                  <Typography variant="body2" color="text.secondary">
-                    {item.channel}
-                  </Typography>
-                </Box>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    mb: 2,
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <Star
-                      size={16}
-                      style={{ color: "#FFB400", marginRight: 4 }}
-                    />
-                    <Typography variant="body2">
-                      {item.rating} ({item.reviews})
-                    </Typography>
-                  </Box>
-                  <IconButton
-                    onClick={() => toggleFavorite(item.id)}
-                    sx={{
-                      color: favorites.includes(item.id) ? "#FE2C55" : "#999",
-                    }}
-                  >
-                    <Heart
-                      size={20}
-                      fill={favorites.includes(item.id) ? "#FE2C55" : "none"}
-                    />
-                  </IconButton>
-                </Box>
-
-                <Link to="/watch">
-                  <Button fullWidth variant="contained" sx={watchButtonStyle}>
-                    시청하기
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
-        </Box>
-
-        {tabValue === "beauty" && filteredData.length === 0 && (
+        {/* 로딩 중 표시 */}
+        {loading ? (
+          <Box sx={{ textAlign: "center", py: 6 }}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : filteredData.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 6 }}>
             <Typography color="text.secondary">
-              현재 진행 중인 뷰티 라이브 방송이 없습니다.
+              현재 진행 중인 라이브 방송이 없습니다.
             </Typography>
+          </Box>
+        ) : (
+          /* 카드 리스트 */
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "1fr 1fr",
+                md: "1fr 1fr 1fr",
+                lg: "1fr 1fr 1fr 1fr",
+              },
+              gap: 3,
+            }}
+          >
+            {filteredData.map((item) => (
+              <Card key={item.id} sx={{ borderRadius: 2, overflow: "hidden", boxShadow: 3 }}>
+                <Box sx={{ position: "relative" }}>
+                  <CardMedia
+                    component="div"
+                    sx={{
+                      height: 220,
+                      backgroundImage: `url(${item.thumbnail})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 10,
+                      left: 10,
+                      display: "flex",
+                      gap: 1,
+                    }}
+                  >
+                    <Badge label="LIVE" color="#FE2C55" />
+                  </Box>
+                  <Box sx={viewerStyle}>
+                    {/* createdAt을 방송 시간으로 표시 */}
+                    {new Date(item.createdAt).toLocaleTimeString()} 방송
+                  </Box>
+                  <Box sx={durationStyle}>
+                    <Clock size={14} style={{ marginRight: 4 }} />
+                    {/* duration 정보가 없으므로 생략 */}
+                    —
+                  </Box>
+                </Box>
+
+                <CardContent>
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight={600}
+                    sx={{
+                      height: "2.8rem",
+                      overflow: "hidden",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      mb: 1,
+                      fontSize: "0.95rem",
+                    }}
+                  >
+                    {item.title}
+                  </Typography>
+
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                    <Tv size={14} style={{ marginRight: 4, color: "#666" }} />
+                    <Typography variant="body2" color="text.secondary">
+                      {item.seller}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      <Star size={16} style={{ color: "#FFB400", marginRight: 4 }} />
+                      {/* 평점/리뷰 정보 없음 */}
+                      <Typography variant="body2">—</Typography>
+                    </Box>
+                    <IconButton
+                      onClick={() => toggleFavorite(item.id)}
+                      sx={{
+                        color: favorites.includes(item.id) ? "#FE2C55" : "#999",
+                      }}
+                    >
+                      <Heart
+                        size={20}
+                        fill={favorites.includes(item.id) ? "#FE2C55" : "none"}
+                      />
+                    </IconButton>
+                  </Box>
+
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    sx={watchButtonStyle}
+                    onClick={() => window.open(item.liveUrl, "_blank")}
+                  >
+                    방송 보러 가기
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
           </Box>
         )}
       </Box>
@@ -297,7 +247,7 @@ const LivePage = () => {
   );
 };
 
-// 공통 컴포넌트
+// 공통 컴포넌트: 배지
 const Badge = ({ label, color }: { label: string; color: string }) => (
   <Box
     sx={{
@@ -314,6 +264,7 @@ const Badge = ({ label, color }: { label: string; color: string }) => (
   </Box>
 );
 
+// 시청자/방송 시간 스타일
 const viewerStyle = {
   position: "absolute",
   top: 10,

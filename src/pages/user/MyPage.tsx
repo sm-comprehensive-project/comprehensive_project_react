@@ -12,6 +12,9 @@ import {
   CardContent,
   CardMedia,
   CircularProgress,
+  TextField,
+  MenuItem,
+  Stack,
 } from "@mui/material";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import dayjs from "dayjs";
@@ -59,16 +62,18 @@ interface UserInfo {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-// 헤더에서 쓰이던 카테고리 목록을 그대로 복사합니다.
+// 헤더에서 쓰이던 카테고리 목록을 새로운 항목으로 교체합니다.
 const categories = [
-  { emoji: "👗", label: "패션" },
-  { emoji: "💄", label: "뷰티" },
-  { emoji: "🥗", label: "푸드" },
-  { emoji: "🪑", label: "라이프" },
-  { emoji: "✈️", label: "여행/체험" },
-  { emoji: "🧸", label: "키즈" },
-  { emoji: "💻", label: "테크" },
-  { emoji: "⛺", label: "취미레저" },
+  { emoji: "👗", label: "패션의류" },
+  { emoji: "👜", label: "패션잡화" },
+  { emoji: "💄", label: "미용" },
+  { emoji: "💻", label: "가전" },
+  { emoji: "🪑", label: "인테리어" },
+  { emoji: "🧸", label: "육아" },
+  { emoji: "🥗", label: "식품" },
+  { emoji: "⛺", label: "스포츠" },
+  { emoji: "🧼", label: "건강" },
+  { emoji: "✈️", label: "생활편의" },
 ];
 
 // ★★★ 서버 주소를 여기 하드코딩으로 두고, 필요에 따라 수정하세요 ★★★
@@ -114,13 +119,28 @@ const MyPage: React.FC = () => {
   const [recentWatchedSchedule, setRecentWatchedSchedule] = useState<ScheduleCardItem[]>([]);
   const [loadingRecent, setLoadingRecent] = useState<boolean>(false);
 
+  // ─── 수정 모드 / 폼 상태 ─────────────────────────────────────────────────────
+  const [editMode, setEditMode] = useState<boolean>(false);
+  // 수정 폼 필드 (초기엔 userInfo가 로드된 후 채워짐)
+  const [formValues, setFormValues] = useState<{
+    nickname: string;
+    address: string;
+    birthDate: string;
+    gender: "MALE" | "FEMALE" | "";
+  }>({
+    nickname: "",
+    address: "",
+    birthDate: "",
+    gender: "",
+  });
+
   // ─── 1) 사용자 정보(fetch) ───────────────────────────────────────────────────
   const fetchUserInfo = async (email: string) => {
     try {
       const res = await fetch(`${API_BASE}/me?email=${email}`);
       const json = await res.json();
       if (res.ok && json.success) {
-        setUserInfo({
+        const user: UserInfo = {
           email: json.user.email,
           nickname: json.user.nickname,
           loginType: json.user.loginType,
@@ -133,6 +153,14 @@ const MyPage: React.FC = () => {
           interestedCategories: json.user.interestedCategories || [],
           searchHistory: json.user.searchHistory || [],
           recommendations: json.user.recommendations || [],
+        };
+        setUserInfo(user);
+        // 수정 모드 진입 전 폼 초기값 세팅
+        setFormValues({
+          nickname: user.nickname,
+          address: user.address,
+          birthDate: user.birthDate.slice(0, 10), // "YYYY-MM-DD"로 자르기
+          gender: user.gender === "MALE" || user.gender === "FEMALE" ? user.gender : "",
         });
       }
     } catch (err) {
@@ -247,6 +275,61 @@ const MyPage: React.FC = () => {
     }
   };
 
+  // ─── 사용자 정보 수정 요청 함수 ─────────────────────────────────────────────────
+  const handleSave = async () => {
+    if (!userInfo) return;
+    // 서버에 보낼 페이로드: 수정 가능한 필드만 담기
+    const payload = {
+      email: userInfo.email,
+      nickname: formValues.nickname,
+      address: formValues.address,
+      birthDate: formValues.birthDate, // "YYYY-MM-DD"
+      gender: formValues.gender,
+      // 필요하다면 loginType 등 다른 필드 포함 가능
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/update`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        // 성공적으로 업데이트되었을 때, 사용자 정보를 다시 설정
+        setUserInfo((prev) =>
+          prev
+            ? {
+                ...prev,
+                nickname: formValues.nickname,
+                address: formValues.address,
+                birthDate: formValues.birthDate,
+                gender: formValues.gender,
+              }
+            : prev
+        );
+        setEditMode(false);
+      } else {
+        console.error("업데이트 실패:", json.message || "Unknown error");
+      }
+    } catch (err) {
+      console.error("업데이트 중 오류 발생:", err);
+    }
+  };
+
+  // ─── 수정 모드 취소 함수 ───────────────────────────────────────────────────────
+  const handleCancel = () => {
+    if (!userInfo) return;
+    // 원래 userInfo 값으로 폼을 복원
+    setFormValues({
+      nickname: userInfo.nickname,
+      address: userInfo.address,
+      birthDate: userInfo.birthDate.slice(0, 10),
+      gender: userInfo.gender === "MALE" || userInfo.gender === "FEMALE" ? userInfo.gender : "",
+    });
+    setEditMode(false);
+  };
+
   // ─── 로딩 처리 ───────────────────────────────────────────────────────────────
   if (loadingUser) {
     return (
@@ -281,7 +364,9 @@ const MyPage: React.FC = () => {
               마이페이지
             </Typography>
           </Box>
-          <Typography variant="body1">내 정보를 확인하고, 관심 방송을 관리해보세요.</Typography>
+          <Typography variant="body1">
+            내 정보를 확인하고, 관심 방송을 관리해보세요.
+          </Typography>
         </Box>
       </Box>
 
@@ -294,52 +379,134 @@ const MyPage: React.FC = () => {
             p: 3,
             mb: 4,
             display: "flex",
+            flexDirection: "column",
             gap: 3,
-            alignItems: "center",
           }}
         >
-          {/* 아바타: 닉네임 첫 글자 */}
-          <Avatar
-            sx={{
-              width: 64,
-              height: 64,
-              bgcolor: "#3f51b5",
-              fontSize: "1.5rem",
-            }}
-          >
-            {userInfo.nickname.charAt(0).toUpperCase()}
-          </Avatar>
+          <Box sx={{ display: "flex", gap: 3, alignItems: "center" }}>
+            {/* 아바타: 닉네임 첫 글자 */}
+            <Avatar
+              sx={{
+                width: 64,
+                height: 64,
+                bgcolor: "#3f51b5",
+                fontSize: "1.5rem",
+              }}
+            >
+              {userInfo.nickname.charAt(0).toUpperCase()}
+            </Avatar>
 
-          {/* 사용자 기본 정보 */}
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="h6" fontWeight={600}>
-              {userInfo.nickname} 님
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#666", mt: 0.5 }}>
-              이메일: {userInfo.email}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#666", mt: 0.5 }}>
-              생년월일: {dayjs(userInfo.birthDate).format("YYYY년 MM월 DD일")}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#666", mt: 0.5 }}>
-              성별: {userInfo.gender === "MALE" ? "남성" : userInfo.gender === "FEMALE" ? "여성" : "-"}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#666", mt: 0.5 }}>
-              주소: {userInfo.address || "-"}
-            </Typography>
+            {/* 읽기 모드: 사용자 기본 정보 / 수정 모드: TextField */}
+            {editMode ? (
+              <Stack spacing={2} sx={{ flex: 1 }}>
+                <TextField
+                  label="닉네임"
+                  variant="outlined"
+                  size="small"
+                  value={formValues.nickname}
+                  onChange={(e) =>
+                    setFormValues((prev) => ({ ...prev, nickname: e.target.value }))
+                  }
+                />
+                <TextField
+                  label="주소"
+                  variant="outlined"
+                  size="small"
+                  value={formValues.address}
+                  onChange={(e) =>
+                    setFormValues((prev) => ({ ...prev, address: e.target.value }))
+                  }
+                />
+                <Box sx={{ display: "flex", gap: 2 }}>
+                  <TextField
+                    label="생년월일"
+                    type="date"
+                    size="small"
+                    variant="outlined"
+                    value={formValues.birthDate}
+                    onChange={(e) =>
+                      setFormValues((prev) => ({ ...prev, birthDate: e.target.value }))
+                    }
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  <TextField
+                    select
+                    label="성별"
+                    size="small"
+                    variant="outlined"
+                    value={formValues.gender}
+                    onChange={(e) =>
+                      setFormValues((prev) => ({
+                        ...prev,
+                        gender: e.target.value as "MALE" | "FEMALE" | "",
+                      }))
+                    }
+                    sx={{ minWidth: 120 }}
+                  >
+                    <MenuItem value="">선택 안 함</MenuItem>
+                    <MenuItem value="MALE">남성</MenuItem>
+                    <MenuItem value="FEMALE">여성</MenuItem>
+                  </TextField>
+                </Box>
+              </Stack>
+            ) : (
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="h6" fontWeight={600}>
+                  {userInfo.nickname} 님
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#666", mt: 0.5 }}>
+                  이메일: {userInfo.email}
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#666", mt: 0.5 }}>
+                  생년월일: {dayjs(userInfo.birthDate).format("YYYY년 MM월 DD일")}
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#666", mt: 0.5 }}>
+                  성별: {userInfo.gender === "MALE" ? "남성" : userInfo.gender === "FEMALE" ? "여성" : "-"}
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#666", mt: 0.5 }}>
+                  주소: {userInfo.address || "-"}
+                </Typography>
+              </Box>
+            )}
           </Box>
 
-          {/* 회원 정보 수정 버튼 */}
-          <Button
-            variant="outlined"
-            size="small"
-            sx={{ textTransform: "none", borderColor: "#3f51b5", color: "#3f51b5" }}
-            onClick={() => {
-              window.location.href = "/mypage/edit";
-            }}
-          >
-            회원 정보 수정
-          </Button>
+          {/* 수정/저장 버튼 영역 */}
+          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+            {editMode ? (
+              <>
+                <Button
+                  variant="contained"
+                  size="small"
+                  color="primary"
+                  onClick={handleSave}
+                  sx={{ textTransform: "none" }}
+                >
+                  저장
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handleCancel}
+                  sx={{
+                    textTransform: "none",
+                    borderColor: "#3f51b5",
+                    color: "#3f51b5",
+                  }}
+                >
+                  취소
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="outlined"
+                size="small"
+                sx={{ textTransform: "none", borderColor: "#3f51b5", color: "#3f51b5" }}
+                onClick={() => setEditMode(true)}
+              >
+                회원 정보 수정
+              </Button>
+            )}
+          </Box>
         </Box>
 
         {/* ── 2) 관심 카테고리 섹션 ── */}

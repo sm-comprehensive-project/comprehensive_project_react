@@ -1,30 +1,23 @@
 // src/components/live/LiveNowSection2.tsx
 
+import React from "react";
 import {
   Typography,
   Card,
   CardMedia,
   CardContent,
   Box,
-  Avatar,
   Link,
   Grid,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
 
-interface SellerInfo {
-  name: string;
-  url: string;
-  image: string;
-}
-
 interface LiveDataRaw {
   liveId: string;
   title: string;
   live: boolean;
   platform: string;
-  sellerInfo: SellerInfo;
   thumbnail: string;
   liveUrl: string;
 }
@@ -33,6 +26,7 @@ interface Props {
   data: LiveDataRaw[];
 }
 
+// 플랫폼별 색상 반환 (배지용)
 const getPlatformColor = (platform: string) => {
   switch (platform.toLowerCase()) {
     case "kakao":
@@ -48,13 +42,11 @@ const getPlatformColor = (platform: string) => {
 };
 
 const BroadcastCard = ({ live }: { live: LiveDataRaw }) => {
-  const hasSellerUrl = !!live.sellerInfo?.url && live.sellerInfo.url !== "URL 없음";
-
   return (
     <Card
       sx={{
         width: "100%",
-        borderRadius: 3,
+        borderRadius: 2,
         boxShadow: 1,
         overflow: "hidden",
         display: "flex",
@@ -66,86 +58,66 @@ const BroadcastCard = ({ live }: { live: LiveDataRaw }) => {
         },
       }}
     >
-      <CardMedia
-        component="img"
-        height="180"
-        image={live.thumbnail || "/images/streams/thumbnail.webp"}
-        alt={live.title}
-        sx={{ objectFit: "cover" }}
-        onError={(e) => {
-          (e.target as HTMLImageElement).src = "/images/streams/thumbnail.webp";
-        }}
-      />
-      <CardContent sx={{ p: 2, display: "flex", flexDirection: "column", flexGrow: 1 }}>
-        <Typography
-          variant="caption"
-          fontWeight="700"
-          gutterBottom
+      {/* ───────────────────── 썸네일 영역 ───────────────────── */}
+      <Box sx={{ position: "relative" }}>
+        <CardMedia
+          component="img"
+          height="160"
+          image={live.thumbnail || "/images/streams/thumbnail.webp"}
+          alt={live.title}
+          sx={{ objectFit: "cover" }}
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "/images/streams/thumbnail.webp";
+          }}
+        />
+
+        {/* 플랫폼 배지 */}
+        <Box
           sx={{
-            color: getPlatformColor(live.platform),
-            mb: 0.5,
+            position: "absolute",
+            top: 8,
+            left: 8,
+            backgroundColor: getPlatformColor(live.platform),
+            color: "#000",
+            fontWeight: 700,
+            fontSize: "0.7rem",
+            px: 1,
+            py: "2px",
+            borderRadius: "4px",
           }}
         >
-          📺 {live.platform.toUpperCase()} 방송
-        </Typography>
+          {live.platform.toUpperCase()}
+        </Box>
+      </Box>
 
+      {/* ───────────────────── 카드 내용 ───────────────────── */}
+      <CardContent
+        sx={{
+          p: 2,
+          display: "flex",
+          flexDirection: "column",
+          flexGrow: 1,
+        }}
+      >
+        {/* 제목 (두 줄 이하로 유지, 넘치면 말줄임) */}
         <Typography
           variant="body2"
-          fontWeight="bold"
-          noWrap
+          fontWeight="600"
           sx={{
+            height: "3rem", // 두 줄 정도 확보
+            lineHeight: "1.4rem",
             overflow: "hidden",
             textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
             mb: 1,
           }}
         >
           {live.title.replace(/\n/g, " ")}
         </Typography>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-          {hasSellerUrl ? (
-            <Link
-              href={live.sellerInfo.url}
-              target="_blank"
-              underline="none"
-              color="inherit"
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                "&:hover": {
-                  color: "#FF5722",
-                },
-                cursor: "pointer",
-              }}
-            >
-              <Avatar
-                src={live.sellerInfo.image}
-                alt={live.sellerInfo.name}
-                sx={{ width: 24, height: 24 }}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/images/default_seller.png";
-                }}
-              />
-              <Typography variant="subtitle2" noWrap>
-                {live.sellerInfo.name ?? "정보 없음"}
-              </Typography>
-            </Link>
-          ) : (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "#999" }}>
-              <Avatar
-                src={live.sellerInfo.image}
-                alt={live.sellerInfo.name}
-                sx={{ width: 24, height: 24 }}
-              />
-              <Typography variant="subtitle2" noWrap>
-                {live.sellerInfo.name ?? "정보 없음"}
-              </Typography>
-            </Box>
-          )}
-        </Box>
-
+        {/* “방송 바로가기” 버튼 (카드 하단 고정) */}
         <Box sx={{ mt: "auto" }}>
           <Link
             href={live.liveUrl || "#"}
@@ -153,7 +125,7 @@ const BroadcastCard = ({ live }: { live: LiveDataRaw }) => {
             underline="none"
             sx={{
               display: "inline-block",
-              fontWeight: "bold",
+              fontWeight: "700",
               fontSize: "0.875rem",
               color: "#FF5722",
               border: "1px solid #FF5722",
@@ -168,7 +140,7 @@ const BroadcastCard = ({ live }: { live: LiveDataRaw }) => {
               },
             }}
           >
-            👉 방송 바로가기
+            방송 바로가기
           </Link>
         </Box>
       </CardContent>
@@ -176,8 +148,8 @@ const BroadcastCard = ({ live }: { live: LiveDataRaw }) => {
   );
 };
 
-const LiveNowSection2 = ({ data }: Props) => {
-  // ID 중복 제거
+const LiveNowSection2: React.FC<Props> = ({ data }) => {
+  // liveId로 중복 제거
   const uniqueLives = Object.values(
     data.reduce((acc, cur) => {
       if (!acc[cur.liveId]) acc[cur.liveId] = cur;
@@ -185,7 +157,7 @@ const LiveNowSection2 = ({ data }: Props) => {
     }, {} as { [key: string]: LiveDataRaw })
   );
 
-  // 반응형 여부에 따라 컬럼 갯수 변경 (예: 모바일일 땐 1컬럼, 태블릿 2컬럼 등)
+  // 반응형 그리드
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
 
@@ -201,17 +173,16 @@ const LiveNowSection2 = ({ data }: Props) => {
         🔥 방송 카드 리스트
       </Typography>
 
-      {/* Grid 컨테이너 */}
       <Grid container spacing={3}>
         {uniqueLives.map((live) => (
           <Grid
             item
             key={live.liveId}
             xs={12}   // 모바일: 한 줄에 1개
-            sm={6}    // 작은 태블릿(≥600px): 한 줄에 2개
-            md={4}    // 데스크탑(≥960px): 한 줄에 3개
-            lg={3}    // 큰 데스크탑(≥1280px): 한 줄에 4개
-            xl={2}    // 매우 큰 화면(≥1920px): 한 줄에 6개
+            sm={6}    // 작은 태블릿(>=600px): 한 줄에 2개
+            md={4}    // 데스크탑(>=960px): 한 줄에 3개
+            lg={3}    // 큰 데스크탑(>=1280px): 한 줄에 4개
+            xl={2}    // 매우 큰 화면(>=1920px): 한 줄에 6개
           >
             <BroadcastCard live={live} />
           </Grid>
