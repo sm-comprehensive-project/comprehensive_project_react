@@ -3,12 +3,23 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: './', // ⚡ 잘못된 경로가 있으면 테두리 남을 수 있음
+  base: './',
 
-   server: {
+  server: {
     proxy: {
+      // 백엔드 A (DAMOA 스케줄 / Likes 등)
       '/api': {
         target: 'http://localhost:8088',
+        changeOrigin: true,
+      },
+      '/damoa/schedule': {
+        target: 'http://localhost:8088',
+        changeOrigin: true,
+      },
+
+      // 백엔드 B (이벤트 수집)
+      '/events': {
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
     },

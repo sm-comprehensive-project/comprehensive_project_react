@@ -1,0 +1,43 @@
+{
+  "header": {
+    "login": "로그인 / 회원가입",
+    "schedule": "편성표",
+    "tictoc": "틱톡"
+  },
+  "userNav": {
+    "wishlist": "찜 목록",
+    "mypage": "내 정보",
+    "language": "언어 선택"
+  },
+  "language": {
+    "ko": "한국어",
+    "en": "English",
+    "zh": "中文",
+    "ja": "日本語"
+  },
+  "search": {
+    "placeholder": "검색어 입력...",
+    "recentSearch": "최근 검색어",
+    "dummy": {
+      "item1": "인기 상품",
+      "item2": "새로운 레시피",
+      "item3": "오늘의 메이크업"
+    }
+  },
+  "footer": {
+    "company": "DAMOA",
+    "description": "최고의 라이브 커머스 플랫폼으로 쇼핑의 새로운 경험을 제공합니다.",
+    "support": "고객센터: 1234-5678 (평일 09:00-18:00)",
+    "section": {
+      "shop": "쇼핑하기",
+      "support": "고객지원",
+      "mypage": "마이페이지",
+      "follow": "팔로우하기"
+    },
+    "shopList": ["베스트", "신상품", "이벤트", "라이브"],
+    "supportList": ["자주 묻는 질문", "1:1 문의", "공지사항", "이용약관"],
+    "mypageList": ["주문조회", "배송조회", "취소/반품", "쿠폰/포인트"],
+    "followList": ["나형진", "윤영학", "조현열", "천가온"],
+    "copyright": "© 2023 DAMOA. All rights reserved."
+  }
+}

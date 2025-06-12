@@ -1,6 +1,17 @@
+// 파일: src/components/layout/Footer.tsx
+import React from "react";
 import { Box, Typography, Container, Divider } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
-const Footer = () => {
+const Footer: React.FC = () => {
+  const { t } = useTranslation();
+
+  // returnObjects 옵션을 이용해 배열을 받아올 때, 타입 단언(as string[])을 사용합니다.
+  const shopItems = t("footer.shopList", { returnObjects: true }) as string[];
+  const supportItems = t("footer.supportList", { returnObjects: true }) as string[];
+  const mypageItems = t("footer.mypageList", { returnObjects: true }) as string[];
+  const followItems = t("footer.followList", { returnObjects: true }) as string[];
+
   return (
     <Box sx={{ backgroundColor: "#212121", color: "white", py: 6 }}>
       <Container maxWidth="lg">
@@ -12,18 +23,20 @@ const Footer = () => {
             mb: 4,
           }}
         >
+          {/* 회사 로고/소개/고객센터 정보 */}
           <Box sx={{ mb: { xs: 4, md: 0 } }}>
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
-              DAMOA
+              {t("footer.company")}
             </Typography>
             <Typography variant="body2" sx={{ mb: 2, color: "#aaa" }}>
-              최고의 라이브 커머스 플랫폼으로 쇼핑의 새로운 경험을 제공합니다.
+              {t("footer.description")}
             </Typography>
             <Typography variant="body2" sx={{ color: "#aaa" }}>
-              고객센터: 1234-5678 (평일 09:00-18:00)
+              {t("footer.support")}
             </Typography>
           </Box>
 
+          {/* 네 개 섹션: 쇼핑하기, 고객지원, 마이페이지, 팔로우하기 */}
           <Box
             sx={{
               display: "grid",
@@ -31,44 +44,48 @@ const Footer = () => {
               gap: 4,
             }}
           >
+            {/* 쇼핑하기 섹션 */}
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 2 }}>
-                쇼핑하기
+                {t("footer.section.shop")}
               </Typography>
-              {["베스트", "신상품", "이벤트", "라이브"].map((text) => (
+              {shopItems.map((text: string) => (
                 <Typography key={text} variant="body2" sx={{ mb: 1, color: "#aaa" }}>
                   {text}
                 </Typography>
               ))}
             </Box>
 
+            {/* 고객지원 섹션 */}
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 2 }}>
-                고객지원
+                {t("footer.section.support")}
               </Typography>
-              {["자주 묻는 질문", "1:1 문의", "공지사항", "이용약관"].map((text) => (
+              {supportItems.map((text: string) => (
                 <Typography key={text} variant="body2" sx={{ mb: 1, color: "#aaa" }}>
                   {text}
                 </Typography>
               ))}
             </Box>
 
+            {/* 마이페이지 섹션 */}
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 2 }}>
-                마이페이지
+                {t("footer.section.mypage")}
               </Typography>
-              {["주문조회", "배송조회", "취소/반품", "쿠폰/포인트"].map((text) => (
+              {mypageItems.map((text: string) => (
                 <Typography key={text} variant="body2" sx={{ mb: 1, color: "#aaa" }}>
                   {text}
                 </Typography>
               ))}
             </Box>
 
+            {/* 팔로우하기 섹션 */}
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 2 }}>
-                팔로우하기
+                {t("footer.section.follow")}
               </Typography>
-              {["나형진", "윤영학", "조현열", "천가온"].map((text) => (
+              {followItems.map((text: string) => (
                 <Typography key={text} variant="body2" sx={{ mb: 1, color: "#aaa" }}>
                   {text}
                 </Typography>
@@ -80,7 +97,7 @@ const Footer = () => {
         <Divider sx={{ backgroundColor: "rgba(255,255,255,0.1)", my: 3 }} />
 
         <Typography variant="body2" sx={{ color: "#777", textAlign: "center" }}>
-          © 2023 DAMOA. All rights reserved.
+          {t("footer.copyright")}
         </Typography>
       </Container>
     </Box>

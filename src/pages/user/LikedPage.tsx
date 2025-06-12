@@ -385,7 +385,7 @@ const LikedPage: React.FC = () => {
                           alignItems: "center",
                         }}
                       >
-                        <Typography sx={{ color: "#fff", fontSize: "1.5rem", fontWeight: "bold" }}>
+                        <Typography sx={{ color: "#fff", fontSize: "1.3rem", fontWeight: "bold" }}>
                           {item.time} 방송 시작
                         </Typography>
                       </Box>

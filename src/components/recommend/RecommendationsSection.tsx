@@ -1,25 +1,38 @@
-// src/components/recommend/RecommendationsSection.tsx
-
 import React from "react";
-import { Box, Card, CardMedia, CardContent, Typography, Button, Avatar } from "@mui/material";
+import {
+  Box,
+  Card,
+  CardMedia,
+  CardContent,
+  Typography,
+  Button,
+  Avatar,
+  useTheme,
+} from "@mui/material";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
-import { Navigation /*, Autoplay */ } from "swiper/modules";
+import { Navigation } from "swiper/modules";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
-import { Recommendation } from "../../components/HeroBanner";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import type { Recommendation } from "../../components/HeroBanner";
 
-interface RecommendationsSectionProps {
+export interface RecommendationsSectionProps {
   data: Recommendation[];
+  onItemClick?: (item: Recommendation) => void;
 }
 
-const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({ data }) => {
+const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({
+  data,
+  onItemClick,
+}) => {
+  const theme = useTheme();
+  const navigate = useNavigate();
+
   return (
-    // 상하에 살짝 여백을 주기 위해 py: 2 추가
-    <Box sx={{ position: "relative", mt: 2, py: 2 }}>
-      {/* 이전/다음 버튼 */}
+    <Box sx={{ position: "relative", mt: 4, px: 2 }}>
+      {/* 네비게이션 버튼 */}
       <Box
         className="swiper-button-prev-rec"
         sx={{
@@ -28,18 +41,20 @@ const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({ data })
           left: 8,
           transform: "translateY(-50%)",
           zIndex: 10,
-          backgroundColor: "rgba(0,0,0,0.4)",
-          color: "white",
-          width: 36,
-          height: 36,
+          bgcolor: "rgba(0,0,0,0.5)",
+          color: "#fff",
+          width: 40,
+          height: 40,
           borderRadius: "50%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           cursor: "pointer",
+          transition: "background-color 0.3s",
+          "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
         }}
       >
-        <ArrowBackIosIcon sx={{ fontSize: 16 }} />
+        <ArrowBackIosIcon fontSize="small" />
       </Box>
       <Box
         className="swiper-button-next-rec"
@@ -49,107 +64,151 @@ const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({ data })
           right: 8,
           transform: "translateY(-50%)",
           zIndex: 10,
-          backgroundColor: "rgba(0,0,0,0.4)",
-          color: "white",
-          width: 36,
-          height: 36,
+          bgcolor: "rgba(0,0,0,0.5)",
+          color: "#fff",
+          width: 40,
+          height: 40,
           borderRadius: "50%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           cursor: "pointer",
+          transition: "background-color 0.3s",
+          "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
         }}
       >
-        <ArrowForwardIosIcon sx={{ fontSize: 16 }} />
+        <ArrowForwardIosIcon fontSize="small" />
       </Box>
 
       <Swiper
-        modules={[Navigation /*, Autoplay*/]}
+        modules={[Navigation]}
         navigation={{
           prevEl: ".swiper-button-prev-rec",
           nextEl: ".swiper-button-next-rec",
         }}
-        loop={true} // 무한 반복
-        // autoplay={{
-        //   delay: 3000,
-        //   disableOnInteraction: false,
-        // }}
-        spaceBetween={16}
+        loop
+        spaceBetween={20}
         slidesPerView={1.2}
         breakpoints={{
           600: { slidesPerView: 2, spaceBetween: 16 },
           960: { slidesPerView: 3, spaceBetween: 20 },
           1280: { slidesPerView: 4, spaceBetween: 24 },
         }}
-        style={{
-          // 상하 여백 추가
-          paddingTop: 8,
-          paddingBottom: 8,
-          paddingLeft: 0,
-          paddingRight: 0,
-        }}
+        style={{ padding: "16px 0" }}
       >
         {data.map((item) => (
           <SwiperSlide key={item.liveId}>
             <Card
+              onClick={() => onItemClick?.(item)}
               sx={{
+                cursor: onItemClick ? "pointer" : "default",
+                borderRadius: 3,
+                boxShadow: 2,
+                transition: "transform 0.3s, box-shadow 0.3s",
+                "&:hover": {
+                  transform: "scale(1.03)",
+                  boxShadow: 6,
+                },
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "space-between",
-                borderRadius: 2,
-                boxShadow: 3,
               }}
             >
-              <CardMedia
-                component="img"
-                height="140"
-                image={item.thumbnail}
-                alt={item.title}
-                sx={{ objectFit: "cover" }}
-                onError={(e) => {
-                  // (e.target as HTMLImageElement).src = "/images/placeholder.png";
+              <Box sx={{ position: "relative" }}>
+                <CardMedia
+                  component="img"
+                  height="180"
+                  image={item.thumbnail}
+                  alt={item.title}
+                  sx={{ objectFit: "cover" }}
+                />
+                {item.live && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      bgcolor: theme.palette.error.main,
+                      color: "#fff",
+                      px: 1,
+                      py: "2px",
+                      borderRadius: 1,
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    LIVE
+                  </Box>
+                )}
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 8,
+                    left: 8,
+                    bgcolor:
+                      item.platform === "kakao" ? "#FEE500" : "#03C75A",
+                    color: item.platform === "kakao" ? "#000" : "#fff",
+                    px: 1,
+                    py: "2px",
+                    borderRadius: 1,
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                  }}
+                >
+                  {item.platform.toUpperCase()}
+                </Box>
+              </Box>
+
+              <CardContent
+                sx={{
+                  p: 2,
+                  display: "flex",
+                  flexDirection: "column",
+                  flexGrow: 1,
                 }}
-              />
-              <CardContent sx={{ p: 1, display: "flex", flexDirection: "column", flexGrow: 1 }}>
+              >
                 <Typography
                   variant="subtitle1"
-                  fontWeight="bold"
                   noWrap
                   sx={{
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
+                    fontWeight: 700,
+                    mb: 1,
                   }}
                 >
                   {item.title.replace(/\n/g, " ")}
                 </Typography>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
+
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    mb: 2,
+                  }}
+                >
                   <Avatar
                     src={item.sellerInfo.image}
                     alt={item.sellerInfo.name}
-                    sx={{ width: 24, height: 24 }}
-                    onError={(e) => {
-                      // (e.target as HTMLImageElement).src = "/images/default_seller.png";
-                    }}
+                    sx={{ width: 28, height: 28 }}
                   />
-                  <Typography variant="caption" noWrap>
+                  <Typography variant="body2" noWrap>
                     {item.sellerInfo.name}
                   </Typography>
                 </Box>
-                <Box sx={{ mt: "auto" }}>
-                  {/* React Router Link를 사용해 /watch/{liveId}로 이동 */}
-                  <Button
-                    component={Link}
-                    to={`/watch/${item.liveId}`}
-                    variant="outlined"
-                    size="small"
-                    fullWidth
-                    sx={{ fontWeight: 600, fontSize: "0.8rem", mt: 1 }}
-                  >
-                    방송 보기
-                  </Button>
-                </Box>
+
+                <Button
+                  variant="contained"
+                  size="small"
+                  fullWidth
+                  onClick={() => navigate(`/watch/${item.liveId}`)}
+                  sx={{
+                    mt: "auto",
+                    textTransform: "none",
+                    fontWeight: 700,
+                  }}
+                >
+                  방송 보기
+                </Button>
               </CardContent>
             </Card>
           </SwiperSlide>

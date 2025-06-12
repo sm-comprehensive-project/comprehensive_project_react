@@ -15,6 +15,10 @@ import {
   TextField,
   MenuItem,
   Stack,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
 } from "@mui/material";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import dayjs from "dayjs";
@@ -60,8 +64,17 @@ interface UserInfo {
   searchHistory: string[];
   recommendations: { liveId: string; score: number }[];
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 클릭 아이템을 파싱한 후 중복 제거하여 저장할 타입을 정의합니다.
+interface ParsedClickItem {
+  ItemId: string;
+  thumbnail: string;
+  link: string;
+  timestamp: string; // ISO 문자열
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 헤더에서 쓰이던 카테고리 목록을 새로운 항목으로 교체합니다.
 const categories = [
   { emoji: "👗", label: "패션의류" },
@@ -79,6 +92,7 @@ const categories = [
 // ★★★ 서버 주소를 여기 하드코딩으로 두고, 필요에 따라 수정하세요 ★★★
 const API_BASE = "http://localhost:8088/api/user";
 const SCHEDULE_BASE = "http://localhost:8088/damoa/schedule";
+
 const FALLBACK_THUMBNAIL =
   "https://st.kakaocdn.net/commerce_ui/static/common_module/default_fallback_thumbnail.png";
 
@@ -119,6 +133,9 @@ const MyPage: React.FC = () => {
   const [recentWatchedSchedule, setRecentWatchedSchedule] = useState<ScheduleCardItem[]>([]);
   const [loadingRecent, setLoadingRecent] = useState<boolean>(false);
 
+  // ─── 클릭 아이템 상태 (파싱 후 중복 제거) ────────────────────────────────────
+  const [parsedClickItems, setParsedClickItems] = useState<ParsedClickItem[]>([]);
+
   // ─── 수정 모드 / 폼 상태 ─────────────────────────────────────────────────────
   const [editMode, setEditMode] = useState<boolean>(false);
   // 수정 폼 필드 (초기엔 userInfo가 로드된 후 채워짐)
@@ -155,6 +172,7 @@ const MyPage: React.FC = () => {
           recommendations: json.user.recommendations || [],
         };
         setUserInfo(user);
+
         // 수정 모드 진입 전 폼 초기값 세팅
         setFormValues({
           nickname: user.nickname,
@@ -197,6 +215,53 @@ const MyPage: React.FC = () => {
     }
   };
 
+  // ─── userInfo.recentWatchedIds가 준비되면 스케줄 데이터를 로드 ─────────────────────
+  useEffect(() => {
+    if (userInfo && userInfo.recentWatchedIds.length > 0) {
+      fetchRecentWatchedSchedule(userInfo.recentWatchedIds);
+    }
+  }, [userInfo]);
+
+  // ─── userInfo.clickedItems가 준비되면 파싱 및 중복 제거 ─────────────────────────
+  useEffect(() => {
+    if (!userInfo) return;
+
+    // 1) 문자열 형태의 clickedItems를 JSON으로 파싱
+    const allParsed: ParsedClickItem[] = userInfo.clickedItems
+      .map((itemStr) => {
+        try {
+          const parsed = JSON.parse(itemStr);
+          return {
+            ItemId: parsed.ItemId,
+            thumbnail: parsed.thumbnail,
+            link: parsed.link,
+            timestamp: parsed.timestamp.$date, // timestamp 내부 $date 추출
+          };
+        } catch {
+          return null;
+        }
+      })
+      .filter((item): item is ParsedClickItem => item !== null);
+
+    // 2) 중복 제거 (ItemId 기준 가장 최근 하나만 남기기)
+    const uniqueMap = new Map<string, ParsedClickItem>();
+    allParsed.forEach((item) => {
+      const existing = uniqueMap.get(item.ItemId);
+      if (!existing) {
+        uniqueMap.set(item.ItemId, item);
+      } else {
+        // timestamp가 더 최근인 것을 남김
+        if (new Date(item.timestamp) > new Date(existing.timestamp)) {
+          uniqueMap.set(item.ItemId, item);
+        }
+      }
+    });
+
+    // 3) 중복 제거된 배열로 변환
+    const deduped = Array.from(uniqueMap.values());
+    setParsedClickItems(deduped);
+  }, [userInfo]);
+
   // ─── 초기 마운트: 세션 스토리지에서 이메일 꺼내기 ─────────────────────────────────
   useEffect(() => {
     const stored = sessionStorage.getItem("user");
@@ -215,21 +280,21 @@ const MyPage: React.FC = () => {
     }
   }, []);
 
-  // ─── userInfo.recentWatchedIds가 준비되면 스케줄 데이터를 로드 ─────────────────────
-  useEffect(() => {
-    if (userInfo && userInfo.recentWatchedIds.length > 0) {
-      fetchRecentWatchedSchedule(userInfo.recentWatchedIds);
-    }
-  }, [userInfo]);
-
   // ─── 관심 카테고리 추가/제거 ─────────────────────────────────────────────────
+  // 기존에는 절대 URL(EVENT_API)을 사용했으나, Vite 프록시를 적용해 상대 경로로 변경합니다.
+
+  // 카테고리 관심 등록 (이벤트 전송)
   const addCategory = async (category: string) => {
     if (!userInfo) return;
     try {
-      await fetch(`${API_BASE}/category/add`, {
+      await fetch("/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: userInfo.email, category }),
+        body: JSON.stringify({
+          userId: userInfo.email,
+          type: "CATEGORY_INTEREST",
+          data: { Category: category },
+        }),
       });
       setUserInfo((prev: UserInfo | null) =>
         prev
@@ -240,17 +305,22 @@ const MyPage: React.FC = () => {
           : prev
       );
     } catch (err) {
-      console.error("카테고리 추가 실패:", err);
+      console.error("카테고리 추가 이벤트 전송 실패:", err);
     }
   };
 
+  // 카테고리 관심 해제 (이벤트 전송)
   const removeCategory = async (category: string) => {
     if (!userInfo) return;
     try {
-      await fetch(`${API_BASE}/category/remove`, {
+      await fetch("/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: userInfo.email, category }),
+        body: JSON.stringify({
+          userId: userInfo.email,
+          type: "CATEGORY_INTEREST",
+          data: { Category: category },
+        }),
       });
       setUserInfo((prev: UserInfo | null) =>
         prev
@@ -261,7 +331,7 @@ const MyPage: React.FC = () => {
           : prev
       );
     } catch (err) {
-      console.error("카테고리 제거 실패:", err);
+      console.error("카테고리 해제 이벤트 전송 실패:", err);
     }
   };
 
@@ -278,14 +348,12 @@ const MyPage: React.FC = () => {
   // ─── 사용자 정보 수정 요청 함수 ─────────────────────────────────────────────────
   const handleSave = async () => {
     if (!userInfo) return;
-    // 서버에 보낼 페이로드: 수정 가능한 필드만 담기
     const payload = {
       email: userInfo.email,
       nickname: formValues.nickname,
       address: formValues.address,
-      birthDate: formValues.birthDate, // "YYYY-MM-DD"
+      birthDate: formValues.birthDate,
       gender: formValues.gender,
-      // 필요하다면 loginType 등 다른 필드 포함 가능
     };
 
     try {
@@ -296,7 +364,6 @@ const MyPage: React.FC = () => {
       });
       const json = await res.json();
       if (res.ok && json.success) {
-        // 성공적으로 업데이트되었을 때, 사용자 정보를 다시 설정
         setUserInfo((prev) =>
           prev
             ? {
@@ -320,7 +387,6 @@ const MyPage: React.FC = () => {
   // ─── 수정 모드 취소 함수 ───────────────────────────────────────────────────────
   const handleCancel = () => {
     if (!userInfo) return;
-    // 원래 userInfo 값으로 폼을 복원
     setFormValues({
       nickname: userInfo.nickname,
       address: userInfo.address,
@@ -384,7 +450,6 @@ const MyPage: React.FC = () => {
           }}
         >
           <Box sx={{ display: "flex", gap: 3, alignItems: "center" }}>
-            {/* 아바타: 닉네임 첫 글자 */}
             <Avatar
               sx={{
                 width: 64,
@@ -396,7 +461,6 @@ const MyPage: React.FC = () => {
               {userInfo.nickname.charAt(0).toUpperCase()}
             </Avatar>
 
-            {/* 읽기 모드: 사용자 기본 정보 / 수정 모드: TextField */}
             {editMode ? (
               <Stack spacing={2} sx={{ flex: 1 }}>
                 <TextField
@@ -470,7 +534,6 @@ const MyPage: React.FC = () => {
             )}
           </Box>
 
-          {/* 수정/저장 버튼 영역 */}
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
             {editMode ? (
               <>
@@ -552,6 +615,7 @@ const MyPage: React.FC = () => {
             backgroundColor: "#fff",
             borderRadius: 2,
             p: 3,
+            mb: 4,
           }}
         >
           <Typography variant="h6" fontWeight={600} mb={2}>
@@ -663,6 +727,90 @@ const MyPage: React.FC = () => {
           ) : (
             <Typography variant="body2" sx={{ color: "#999" }}>
               최근 본 방송 기록이 없습니다.
+            </Typography>
+          )}
+        </Box>
+
+        {/* ── 4) 클릭한 아이템 섹션 (리스트 형식) ── */}
+        <Box
+          sx={{
+            backgroundColor: "#fff",
+            borderRadius: 2,
+            p: 3,
+            mb: 4,
+          }}
+        >
+          <Typography variant="h6" fontWeight={600} mb={2}>
+            클릭한 상품 정보 ({parsedClickItems.length}개)
+          </Typography>
+
+          {parsedClickItems.length > 0 ? (
+            <List>
+              {parsedClickItems.map((item, index) => (
+                <ListItem
+                  key={index}
+                  secondaryAction={
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        textTransform: "none",
+                        fontSize: "0.75rem",
+                        borderColor: "#3f51b5",
+                        color: "#3f51b5",
+                        "&:hover": {
+                          backgroundColor: "#3f51b5",
+                          color: "#fff",
+                        },
+                      }}
+                      onClick={() => window.open(item.link, "_blank")}
+                    >
+                      상품 페이지
+                    </Button>
+                  }
+                  sx={{
+                    mb: 1,
+                    borderRadius: 1,
+                    border: "1px solid #eee",
+                  }}
+                >
+                  {item.thumbnail ? (
+                    <ListItemAvatar>
+                      <Avatar
+                        variant="square"
+                        src={item.thumbnail}
+                        sx={{ width: 60, height: 60, mr: 2 }}
+                      />
+                    </ListItemAvatar>
+                  ) : (
+                    <Box
+                      sx={{
+                        width: 60,
+                        height: 60,
+                        backgroundColor: "#ddd",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        color: "#666",
+                        mr: 2,
+                        borderRadius: 1,
+                      }}
+                    >
+                      이미지 없음
+                    </Box>
+                  )}
+                  <ListItemText
+                    primary={item.ItemId}
+                    secondary={dayjs(item.timestamp).format("YYYY-MM-DD HH:mm:ss")}
+                    primaryTypographyProps={{ fontSize: "0.9rem", noWrap: true }}
+                    secondaryTypographyProps={{ fontSize: "0.75rem", color: "#666" }}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography variant="body2" sx={{ color: "#999" }}>
+              클릭한 아이템 기록이 없습니다.
             </Typography>
           )}
         </Box>

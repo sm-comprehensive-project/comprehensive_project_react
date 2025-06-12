@@ -3,7 +3,8 @@
 "use client";
 
 import React from "react";
-import { Box, Container, Typography, Button } from "@mui/material";
+import { Box, Container, Typography, Button, CircularProgress } from "@mui/material";
+import { Link } from "react-router-dom";
 
 // HeroBanner에서 사용하는 Recommendation 타입
 export type Recommendation = {
@@ -27,11 +28,11 @@ export type User = {
 interface HeroBannerProps {
   user: User | null;
   recommendedItem: Recommendation | null;
+  loading: boolean; // 로딩 중 여부
 }
 
-const HeroBanner: React.FC<HeroBannerProps> = ({ user, recommendedItem }) => {
-  // 디버깅용 console.log 추가
-  console.log("[HeroBanner] 렌더링 → user:", user, "recommendedItem:", recommendedItem);
+const HeroBanner: React.FC<HeroBannerProps> = ({ user, recommendedItem, loading }) => {
+  console.log("[HeroBanner] 렌더링 → user:", user, "recommendedItem:", recommendedItem, "loading:", loading);
 
   return (
     <Box
@@ -52,56 +53,120 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ user, recommendedItem }) => {
             justifyContent: "space-between",
           }}
         >
-          {/* 왼쪽: 텍스트 / 버튼 */}
+          {/* ─────────── 왼쪽: 추천 방송 제목 + 버튼 ─────────── */}
           <Box sx={{ maxWidth: { xs: "100%", md: "50%" }, mb: { xs: 4, md: 0 } }}>
-            <Typography
-              variant="h2"
-              sx={{ fontWeight: "800", mb: 2, fontSize: { xs: "2rem", sm: "2.5rem", md: "3rem" } }}
-            >
-              DAMOA 라이브 쇼핑
-            </Typography>
-            <Typography
-              variant="h6"
-              sx={{ mb: 1, fontWeight: "400", opacity: 0.9, fontSize: { xs: "1rem", sm: "1.1rem" } }}
-            >
-              지금 라이브로 쇼핑하지마 특별한 혜택을 받아보세요!
-              <br />
-              다양한 브랜드의 실시간 라이브 방송을 한 곳에서 만나보세요.
-            </Typography>
-            {user && (
-              <Typography
-                variant="subtitle1"
-                sx={{ fontWeight: 500, mt: 2, mb: 2, fontSize: "1.05rem" }}
-              >
-                {recommendedItem
-                  ? `${user.nickname} 님 맞춤 방송`
-                  : `${user.nickname} 님을 위한 라이브 쇼핑`}
-              </Typography>
+            {loading ? (
+              // ─── 로딩 중인 경우 ───
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <CircularProgress size={32} color="inherit" />
+                <Typography variant="h5" sx={{ fontWeight: 500 }}>
+                  추천 방송 정보를 불러오는 중...
+                </Typography>
+              </Box>
+            ) : recommendedItem ? (
+              // ─── 추천 방송이 준비된 경우 ───
+              <>
+                <Typography
+                  variant="h2"
+                  sx={{
+                    fontWeight: "800",
+                    mb: 2,
+                    fontSize: { xs: "2rem", sm: "2.5rem", md: "3rem" },
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {recommendedItem.title}
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    mb: 3,
+                    fontWeight: "400",
+                    opacity: 0.9,
+                    fontSize: { xs: "1rem", sm: "1.1rem" },
+                    lineHeight: 1.5,
+                  }}
+                >
+                  지금 바로 시청하고, 특별한 혜택을 놓치지 마세요!
+                </Typography>
+                <Button
+                  component={Link}
+                  to={`/watch/${recommendedItem.liveId}`}
+                  variant="contained"
+                  size="large"
+                  sx={{
+                    backgroundColor: "white",
+                    color: "#FF5722",
+                    fontWeight: "bold",
+                    px: 4,
+                    py: 1.5,
+                    borderRadius: 2,
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+                    "&:hover": {
+                      backgroundColor: "#f5f5f5",
+                      boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
+                    },
+                    fontSize: { xs: "0.9rem", sm: "1rem" },
+                  }}
+                >
+                  🎥 방송 보러가기
+                </Button>
+              </>
+            ) : (
+              // ─── 추천 방송이 없을 때(loading=false & recommendedItem=null) ───
+              <>
+                <Typography
+                  variant="h2"
+                  sx={{
+                    fontWeight: "800",
+                    mb: 2,
+                    fontSize: { xs: "2rem", sm: "2.5rem", md: "3rem" },
+                    lineHeight: 1.1,
+                  }}
+                >
+                  DAMOA 라이브 쇼핑
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    mb: 3,
+                    fontWeight: "400",
+                    opacity: 0.9,
+                    fontSize: { xs: "1rem", sm: "1.1rem" },
+                    lineHeight: 1.5,
+                  }}
+                >
+                  지금 라이브로 쇼핑하고 특별한 혜택을 받아보세요!
+                  <br />
+                  다양한 브랜드의 실시간 라이브 방송을 한 곳에서 만나보세요.
+                </Typography>
+                <Button
+                  component={Link}
+                  to="/"
+                  variant="contained"
+                  size="large"
+                  sx={{
+                    backgroundColor: "white",
+                    color: "#FF5722",
+                    fontWeight: "bold",
+                    px: 4,
+                    py: 1.5,
+                    borderRadius: 2,
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+                    "&:hover": {
+                      backgroundColor: "#f5f5f5",
+                      boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
+                    },
+                    fontSize: { xs: "0.9rem", sm: "1rem" },
+                  }}
+                >
+                  🎥 라이브 보러가기
+                </Button>
+              </>
             )}
-            <Button
-              variant="contained"
-              size="large"
-              href={recommendedItem?.liveUrl ?? "/"}
-              sx={{
-                backgroundColor: "white",
-                color: "#FF5722",
-                fontWeight: "bold",
-                px: 4,
-                py: 1.5,
-                borderRadius: 2,
-                boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-                "&:hover": {
-                  backgroundColor: "#f5f5f5",
-                  boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
-                },
-                fontSize: { xs: "0.9rem", sm: "1rem" },
-              }}
-            >
-              🎥 {recommendedItem?.title ?? "라이브 보러가기"}
-            </Button>
           </Box>
 
-          {/* 오른쪽: 썸네일 영역 */}
+          {/* ───── 오른쪽: 썸네일 영역 ───── */}
           <Box
             sx={{
               width: { xs: "100%", md: "45%" },
@@ -125,7 +190,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ user, recommendedItem }) => {
                   alt="추천 썸네일"
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   onError={(e) => {
-                    // (e.target as HTMLImageElement).src = "/images/placeholder.png";
+                    // 필요하다면 fallback 이미지 처리
                   }}
                 />
                 <Box

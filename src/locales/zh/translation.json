@@ -1,0 +1,43 @@
+{
+  "header": {
+    "login": "登录 / 注册",
+    "schedule": "节目表",
+    "tictoc": "TikTok"
+  },
+  "userNav": {
+    "wishlist": "收藏",
+    "mypage": "我的信息",
+    "language": "选择语言"
+  },
+  "language": {
+    "ko": "한국어",
+    "en": "English",
+    "zh": "中文",
+    "ja": "日本語"
+  },
+  "search": {
+    "placeholder": "请输入搜索词...",
+    "recentSearch": "最近搜索",
+    "dummy": {
+      "item1": "热门商品",
+      "item2": "新食谱",
+      "item3": "今日化妆"
+    }
+  },
+  "footer": {
+    "company": "DAMOA",
+    "description": "我们作为最好的直播电商平台，为您提供全新的购物体验。",
+    "support": "客服中心：1234-5678（周一至周五 09:00-18:00）",
+    "section": {
+      "shop": "购物",
+      "support": "客户支持",
+      "mypage": "我的账户",
+      "follow": "关注我们"
+    },
+    "shopList": ["热销", "新品", "活动", "直播"],
+    "supportList": ["常见问题", "一对一咨询", "公告", "使用条款"],
+    "mypageList": ["订单查询", "物流查询", "取消/退货", "优惠券/积分"],
+    "followList": ["罗璟", "张伟", "李娜", "王芳"],
+    "copyright": "© 2023 DAMOA. All rights reserved."
+  }
+}

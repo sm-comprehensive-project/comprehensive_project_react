@@ -9,6 +9,7 @@ import AuthPage from "./pages/user/AuthPage";
 import TestPage from "./pages/test";
 import Tictoc from "./pages/tictoc"; // ✅ 추가
 import VideoTest from "./pages/videotest"; // ✅ 추가
+import VideoTest2 from "./pages/videotest2"; // ✅ 추가
 import Watch from "./pages/StreamDetail/WatchPage";
 import SearchResultPage from "./pages/search/SearchResultPage";
 import LikedPage from "./pages/user/LikedPage"; // ✅ 추가
@@ -26,6 +27,7 @@ const App: React.FC = () => {
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/test" element={<TestPage />} />
         <Route path="/videotest" element={<Layout><VideoTest /></Layout>} /> {/* ✅ 테스트용 추가 */}
+        <Route path="/videotest2" element={<Layout><VideoTest2 /></Layout>} /> {/* ✅ 테스트용 추가 */}
         <Route path="/watch" element={<Layout><Watch/></Layout>} /> {/* ✅ 테스트용 추가 */}
         <Route path="/watch/:liveId" element={<Layout><Watch/></Layout>} /> {/* ✅ liveId 파라미터를 받아오도록 수정 */}
         <Route path="/search/category" element={<Layout><CategoryResultPage /></Layout>} /> {/* ✅ 카테고리 검색 결과 페이지 */}

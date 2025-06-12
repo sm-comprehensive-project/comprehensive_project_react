@@ -1,22 +1,19 @@
+// 파일: src/components/layout/Header.tsx
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { Box, Typography, InputBase, IconButton, Badge } from "@mui/material";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import {
-  Box,
-  Typography,
-  Button,
-  InputBase,
-  Badge,
-  Collapse,
-  IconButton,
-} from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import LiveTvIcon from "@mui/icons-material/LiveTv";
-import MenuIcon from "@mui/icons-material/Menu";
+
+import LogoNav from "./headercomponents/LogoNav";
+import UserNav from "./headercomponents/UserNav";
+import CategoryMenu from "./headercomponents/CategoryMenu";
+
+interface User {
+  email: string;
+}
 
 const categories = [
   { emoji: "👗", label: "패션의류", display: "패션의류" },
@@ -37,15 +34,11 @@ const dummySearchResults = [
   { id: 3, text: "오늘의 메이크업", category: "💄" },
 ];
 
-const Header = () => {
+const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  interface User {
-    nickname: string;
-  }
-  const [user, setUser] = useState<User | null>(null);
-
+  // 현재 경로에 따라 테마 색상이나 그래디언트 변경
   const getThemeStyle = () => {
     if (location.pathname.startsWith("/weeklyschedule")) {
       return {
@@ -73,61 +66,53 @@ const Header = () => {
 
   const { color: themeColor, gradient: themeGradient } = getThemeStyle();
 
-  // 검색창
-  const [searchValue, setSearchValue] = useState("");
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const searchRef = useRef<HTMLDivElement>(null);
-
-  // 카테고리 토글
-  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
-  const [selected, setSelected] = useState<string | null>(null);
-  const categoryRef = useRef<HTMLDivElement>(null);
-
+  // 로그인 정보(user) 상태 관리
+  const [user, setUser] = useState<User | null>(null);
   useEffect(() => {
-    const storedUser = sessionStorage.getItem("user");
-    if (storedUser) {
+    const stored = sessionStorage.getItem("user");
+    if (stored) {
       try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
+        const parsed = JSON.parse(stored);
+        setUser({ email: parsed.email });
       } catch {
         setUser(null);
       }
     } else {
       setUser(null);
     }
+  }, []);
 
-    const handleClickOutside = (event: globalThis.MouseEvent) => {
+  // 카테고리 Collapse 토글
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  const toggleCategory = () => setIsCategoryOpen((prev) => !prev);
+
+  const handleSelectCategory = (label: string) => {
+    setSelectedCategory(label === selectedCategory ? null : label);
+    setIsCategoryOpen(false);
+    window.location.href = `/search/category?category=${encodeURIComponent(label)}`;
+  };
+
+  // ---------- 검색창 로직 (원래대로 복원) ----------
+  const [searchValue, setSearchValue] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
       if (
         searchRef.current &&
         !searchRef.current.contains(event.target as Node)
       ) {
         setIsSearchFocused(false);
       }
-      if (
-        categoryRef.current &&
-        !categoryRef.current.contains(event.target as Node)
-      ) {
-        setIsCategoryOpen(false);
-      }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 카테고리 클릭
-  const handleCategoryClick = (label: string) => {
-    // 선택 상태 업데이트
-    setSelected(label === selected ? null : label);
-    // 선택된 카테고리 결과 페이지로 이동
-    navigate(`/search/category?category=${encodeURIComponent(label)}`);
-    // 토글 메뉴 닫기
-    setIsCategoryOpen(false);
-  };
-  const toggleCategory = () => setIsCategoryOpen((prev) => !prev);
-
-  // 검색창 포커스/클리어
   const handleSearchFocus = () => {
     setIsSearchFocused(true);
     inputRef.current?.focus();
@@ -136,6 +121,7 @@ const Header = () => {
     setSearchValue("");
     inputRef.current?.focus();
   };
+  // -------------------------------------------------
 
   return (
     <Box
@@ -178,72 +164,14 @@ const Header = () => {
             height: "64px",
           }}
         >
-          {/* 로고 & 카테고리 토글 */}
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Typography
-              component={Link}
-              to="/"
-              sx={{
-                fontWeight: 700,
-                fontSize: "1.5rem",
-                textDecoration: "none",
-                mr: 3,
-                background: themeGradient,
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                display: "inline-block",
-              }}
-            >
-              DAMOA
-            </Typography>
+          {/* 좌측 로고 + 카테고리 + 네비게이션 */}
+          <LogoNav
+            themeColor={themeColor}
+            themeGradient={themeGradient}
+            onToggleCategory={toggleCategory}
+          />
 
-            <Box
-              onClick={toggleCategory}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                cursor: "pointer",
-                p: 1,
-                borderRadius: 1,
-                "&:hover": { backgroundColor: `${themeColor}10` },
-                mr: 2,
-              }}
-            >
-              <MenuIcon sx={{ color: themeColor, fontSize: "1.5rem" }} />
-            </Box>
-
-            {/* 네비게이션 버튼들 */}
-            <Box sx={{ display: { xs: "none", md: "flex" }, gap: 2 }}>
-              <Button
-                component={Link}
-                to="/weeklyschedule"
-                startIcon={<CalendarTodayIcon sx={{ fontSize: "1rem" }} />}
-                sx={{
-                  color: "#555",
-                  textTransform: "none",
-                  fontWeight: 500,
-                  "&:hover": { color: themeColor },
-                }}
-              >
-                편성표
-              </Button>
-              <Button
-                component={Link}
-                to="/tictoc"
-                startIcon={<LiveTvIcon sx={{ fontSize: "1rem" }} />}
-                sx={{
-                  color: "#555",
-                  textTransform: "none",
-                  fontWeight: 500,
-                  "&:hover": { color: themeColor },
-                }}
-              >
-                틱톡
-              </Button>
-            </Box>
-          </Box>
-
-          {/* 검색창 */}
+          {/* 검색창 (원본 로직으로 복원) */}
           <Box
             ref={searchRef}
             sx={{
@@ -381,124 +309,18 @@ const Header = () => {
             </Box>
           </Box>
 
-          {/* 사용자 정보(Avatar + 닉네임) + 아이콘 영역 */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            {user ? (
-              <>
-                {/* ❤️ 찜 아이콘 (로그인 시에만 보임) */}
-                <IconButton
-                  onClick={() => navigate("/liked")}
-                  sx={{
-                    color: "#555",
-                    "&:hover": { color: themeColor },
-                  }}
-                >
-                  <FavoriteBorderIcon />
-                </IconButton>
-                {/* 닉네임(“조현열 님”)만 클릭 가능하게 처리 */}
-                <Typography
-                  variant="body2"
-                  onClick={() => navigate("/mypage")}
-                  sx={{
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    p: "4px 8px",
-                    borderRadius: "4px",
-                    transition: "background 0.2s",
-                    "&:hover": {
-                      backgroundColor: "#f5f5f5",
-                      color: themeColor,
-                    },
-                  }}
-                >
-                  {user.nickname} 님
-                </Typography>
-              </>
-            ) : (
-              <Button
-                component={Link}
-                to="/auth"
-                sx={{
-                  color: "#555",
-                  textTransform: "none",
-                  fontWeight: "500",
-                  "&:hover": { color: themeColor },
-                }}
-              >
-                로그인 / 회원가입
-              </Button>
-            )}
-          </Box>
+          {/* 우측 로그인／내 정보／찜 아이콘 */}
+          <UserNav themeColor={themeColor} userEmail={user?.email || null} />
         </Box>
       </Box>
 
-      {/* 카테고리 토글 영역 */}
-      <Collapse
-        in={isCategoryOpen}
-        timeout="auto"
-        unmountOnExit
-        ref={categoryRef}
-        sx={{
-          position: "absolute",
-          top: "100%",
-          left: 0,
-          width: "100%",
-          backgroundColor: "#fff",
-          borderTop: "1px solid #f0f0f0",
-          zIndex: 1000,
-          boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
-        }}
-      >
-        <Box
-          sx={{
-            maxWidth: "1200px",
-            mx: "auto",
-            px: 2,
-            py: 3,
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            gap: 3,
-          }}
-        >
-          {categories.map((cat) => (
-            <Box
-              key={cat.label}
-              onClick={() => handleCategoryClick(cat.label)}
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                cursor: "pointer",
-                color: selected === cat.label ? themeColor : "#333",
-              }}
-            >
-              <Box
-                sx={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: "50%",
-                  backgroundColor:
-                    selected === cat.label ? `${themeColor}10` : "#f5f5f5",
-                  border:
-                    selected === cat.label
-                      ? `2px solid ${themeColor}`
-                      : "2px solid transparent",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "1.5rem",
-                }}
-              >
-                {cat.emoji}
-              </Box>
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                {cat.display}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
-      </Collapse>
+      {/* 카테고리 메뉴 Collapse */}
+      <CategoryMenu
+        isOpen={isCategoryOpen}
+        selected={selectedCategory}
+        onSelectCategory={handleSelectCategory}
+        themeColor={themeColor}
+      />
     </Box>
   );
 };

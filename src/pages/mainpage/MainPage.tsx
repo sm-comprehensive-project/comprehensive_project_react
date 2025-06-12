@@ -1,9 +1,7 @@
-// src/pages/mainpage/MainPage.tsx
-
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Box, Container, Typography, Paper } from "@mui/material";
+import React, { useEffect, useState, useMemo } from "react";
+import { Box, Container, Typography, Tabs, Tab, ButtonGroup, Button } from "@mui/material";
 import HeroBanner, { Recommendation, User } from "../../components/HeroBanner";
 import LiveNowSection2 from "../../components/live/LiveNowSection2";
 import RecommendationsSection from "../../components/recommend/RecommendationsSection";
@@ -33,21 +31,18 @@ const SectionTitle: React.FC<{
   icon: string;
   title: string;
 }> = ({ icon, title }) => (
-  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+  <Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
     <Typography
-      variant="h5"
+      variant="subtitle1"
       sx={{
         fontWeight: "700",
         color: "#FF5722",
         display: "flex",
         alignItems: "center",
-        fontSize: { xs: "1.2rem", sm: "1.5rem" },
+        fontSize: { xs: "1rem", sm: "1.2rem" },
       }}
     >
-      <Box
-        component="span"
-        sx={{ mr: 1, fontSize: { xs: "1.3rem", sm: "1.6rem" } }}
-      >
+      <Box component="span" sx={{ mr: 1, fontSize: { xs: "1.3rem", sm: "1.5rem" } }}>
         {icon}
       </Box>
       {title}
@@ -58,129 +53,130 @@ const SectionTitle: React.FC<{
 const MainPage: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
 
-  // (1) 실시간 인기 방송
+  // (1) 실시간 인기 방송 데이터 (카카오+네이버)
   const [liveData, setLiveData] = useState<LiveDataRaw[]>([]);
   const [loadingLive, setLoadingLive] = useState(true);
 
   // (2) Top 1 추천 (HeroBanner용)
-  const [topRecommendation, setTopRecommendation] =
-    useState<Recommendation | null>(null);
+  const [topRecommendation, setTopRecommendation] = useState<Recommendation | null>(null);
 
   // (3) 나머지 추천 리스트 (RecommendationsSection용)
   const [otherRecs, setOtherRecs] = useState<Recommendation[]>([]);
   const [loadingRecs, setLoadingRecs] = useState(true);
 
-  // ───────────────────────────────────────────────────────────────
-  // (1) 실시간 인기 방송 데이터(fetch)
-  useEffect(() => {
-    console.log("[MainPage] useEffect: 실시간 인기 방송 데이터 호출 시작");
-    fetch("http://localhost:8088/damoa/live/summary")
-      .then((res) => {
-        console.log("[MainPage] 실시간 인기 방송 fetch 응답 상태:", res.status);
-        return res.json();
-      })
-      .then((json: LiveDataRaw[]) => {
-        console.log("[MainPage] 실시간 인기 방송 데이터:", json);
-        setLiveData(json);
-      })
-      .catch((err) =>
-        console.error("[MainPage] 실시간 인기 방송 불러오기 실패:", err)
-      )
-      .finally(() => {
-        console.log("[MainPage] 실시간 인기 방송 로딩 완료");
-        setLoadingLive(false);
-      });
-  }, []);
+  // ───────────── 필터 상태 추가 ─────────────
+  const [platformFilter, setPlatformFilter] = useState<"all" | "kakao" | "naver">("all");
+  const [sortOrder, setSortOrder] = useState<"recent" | "oldest">("recent");
 
-  // ───────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────
   // (A) sessionStorage에서 User 파싱
   useEffect(() => {
-    console.log("[MainPage] useEffect: sessionStorage에서 user 정보 파싱 시도");
     const stored = sessionStorage.getItem("user");
     if (stored) {
       try {
         const parsed: User = JSON.parse(stored);
-        console.log("[MainPage] sessionStorage에서 파싱된 user:", parsed);
         setUser(parsed);
-      } catch (e) {
-        console.warn("[MainPage] sessionStorage 파싱 실패:", e);
+      } catch {
         setUser(null);
       }
     } else {
-      console.log("[MainPage] sessionStorage에 user가 없음");
       setUser(null);
     }
   }, []);
 
-  // ───────────────────────────────────────────────────────────────
+  // (1) 실시간 인기 방송 데이터(fetch)
+  useEffect(() => {
+    setLoadingLive(true);
+
+    const fetchKakao = fetch("http://localhost:8088/damoa/live?platform=kakao")
+      .then((res) => {
+        if (!res.ok) throw new Error(`Kakao fetch 실패: ${res.status}`);
+        return res.json() as Promise<LiveDataRaw[]>;
+      });
+
+    const fetchNaver = fetch("http://localhost:8088/damoa/live?platform=naver")
+      .then((res) => {
+        if (!res.ok) throw new Error(`Naver fetch 실패: ${res.status}`);
+        return res.json() as Promise<LiveDataRaw[]>;
+      });
+
+    Promise.all([fetchKakao, fetchNaver])
+      .then(([kakaoList, naverList]) => {
+        const merged = [...kakaoList, ...naverList];
+        setLiveData(merged);
+      })
+      .catch((err) => {
+        console.error("[MainPage] 실시간 인기 방송 불러오기 실패:", err);
+        setLiveData([]);
+      })
+      .finally(() => {
+        setLoadingLive(false);
+      });
+  }, []);
+
   // (2+3) 전체 추천 리스트 API 호출 → Top1과 나머지 분리
   useEffect(() => {
     if (!user) {
-      console.log("[MainPage] 추천 리스트: user 정보가 없어서 API 호출 건너뜀");
       setLoadingRecs(false);
       return;
     }
 
-    console.log("[MainPage] 추천 리스트 API 호출 시작, email:", user.email);
+    setLoadingRecs(true);
     fetch(
-      `http://localhost:8088/api/user/recommendations?email=${encodeURIComponent(
-        user.email
-      )}`,
+      `http://localhost:8088/api/user/recommendations?email=${encodeURIComponent(user.email)}`,
       {
         method: "GET",
         credentials: "include",
       }
     )
       .then((res) => {
-        console.log("[MainPage] 전체 추천 fetch 응답 상태:", res.status);
+        if (!res.ok) throw new Error(`추천 fetch 실패: ${res.status}`);
         return res.json();
       })
-      .then(
-        (data: { success: boolean; recommendations: RecommendationItem[] }) => {
-          console.log("[MainPage] 전체 추천 API 데이터:", data);
-          if (
-            data.success &&
-            Array.isArray(data.recommendations) &&
-            data.recommendations.length > 0
-          ) {
-            // score 기준 내림차순 정렬
-            const sorted = data.recommendations.sort(
-              (a, b) => b.score - a.score
-            );
-            console.log("[MainPage] 정렬된 추천 리스트:", sorted);
-
-            // 첫 번째(Top1) 아이템은 HeroBanner용
-            const top = sorted[0].liveProduct;
-            setTopRecommendation(top);
-            console.log("[MainPage] Top 추천 설정 완료:", top);
-
-            // 나머지(인덱스 1~끝) 아이템만 otherRecs에 저장
-            const remainder = sorted.slice(1).map((item) => item.liveProduct);
-            console.log("[MainPage] Top1 제외한 나머지 추천:", remainder);
-            setOtherRecs(remainder);
-          } else {
-            console.warn(
-              "[MainPage] 추천 API에서 추천 리스트가 비었거나 success=false"
-            );
-          }
+      .then((data: { success: boolean; recommendations: RecommendationItem[] }) => {
+        if (data.success && data.recommendations.length > 0) {
+          const sorted = data.recommendations.sort((a, b) => b.score - a.score);
+          const top = sorted[0].liveProduct;
+          setTopRecommendation(top);
+          const remainder = sorted.slice(1).map((item) => item.liveProduct);
+          setOtherRecs(remainder);
         }
-      )
-      .catch((err) =>
-        console.error("[MainPage] 전체 추천 리스트 로딩 실패:", err)
-      )
+      })
+      .catch((err) => console.error("[MainPage] 추천 불러오기 실패:", err))
       .finally(() => {
-        console.log("[MainPage] 전체 추천 리스트 로딩 완료");
         setLoadingRecs(false);
       });
   }, [user]);
 
+  // ───────────── 필터 적용된 데이터 계산 ─────────────
+  const filteredLiveData = useMemo(() => {
+    let filtered = liveData;
+
+    // 플랫폼 필터
+    if (platformFilter !== "all") {
+      filtered = filtered.filter((item) => item.platform === platformFilter);
+    }
+
+    // 정렬
+    if (sortOrder === "recent") {
+      filtered = [...filtered].sort(
+        (a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+      );
+    } else {
+      filtered = [...filtered].sort(
+        (a, b) => new Date(a.lastUpdated).getTime() - new Date(b.lastUpdated).getTime()
+      );
+    }
+
+    return filtered;
+  }, [liveData, platformFilter, sortOrder]);
+
   return (
     <Box sx={{ backgroundColor: "#f8f9fa", minHeight: "100vh" }}>
-      {/* HeroBanner: user + topRecommendation prop 전달 */}
-      <HeroBanner user={user} recommendedItem={topRecommendation} />
+      {/* HeroBanner */}
+      <HeroBanner user={user} recommendedItem={topRecommendation} loading={loadingRecs} />
 
-      {/* ─────────────────────────────────────────────────────────
-          나머지 추천 방송 가로 스크롤 섹션 (순서를 최상단으로 이동) */}
+      {/* 추천 방송 */}
       {!loadingRecs && otherRecs.length > 0 && (
         <Box sx={{ py: { xs: 4, md: 6 }, backgroundColor: "#ffffff", mt: 2 }}>
           <Container maxWidth="lg" sx={{ px: 0 }}>
@@ -190,22 +186,47 @@ const MainPage: React.FC = () => {
         </Box>
       )}
 
-      {/* ─────────────────────────────────────────────────────────
-          실시간 인기 방송 섹션 (추천 방송 아래로 이동) */}
+      {/* 실시간 인기 방송 */}
       <Box sx={{ py: { xs: 4, md: 6 }, backgroundColor: "#ffffff" }}>
         <Container maxWidth="lg">
           <SectionTitle icon="🔥" title="실시간 인기 방송" />
-          <Paper
-            elevation={0}
-            sx={{
-              borderRadius: "16px",
-              overflow: "hidden",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-              p: { xs: 2, sm: 3 },
-            }}
-          >
-            {!loadingLive && <LiveNowSection2 data={liveData} />}
-          </Paper>
+
+          {/* 필터 UI */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2, flexWrap: "wrap", gap: 1 }}>
+            {/* 플랫폼 필터 */}
+            <Tabs
+              value={platformFilter}
+              onChange={(_, newValue) => setPlatformFilter(newValue)}
+              textColor="primary"
+              indicatorColor="primary"
+            >
+              <Tab label="전체" value="all" />
+              <Tab label="카카오" value="kakao" />
+              <Tab label="네이버" value="naver" />
+            </Tabs>
+
+            {/* 정렬 필터 */}
+            <ButtonGroup variant="outlined" size="small">
+              <Button
+                variant={sortOrder === "recent" ? "contained" : "outlined"}
+                onClick={() => setSortOrder("recent")}
+              >
+                최신순
+              </Button>
+              <Button
+                variant={sortOrder === "oldest" ? "contained" : "outlined"}
+                onClick={() => setSortOrder("oldest")}
+              >
+                오래된순
+              </Button>
+            </ButtonGroup>
+          </Box>
+
+          {!loadingLive ? (
+            <LiveNowSection2 data={filteredLiveData} />
+          ) : (
+            <Typography sx={{ textAlign: "center", py: 6 }}>로딩 중...</Typography>
+          )}
         </Container>
       </Box>
     </Box>

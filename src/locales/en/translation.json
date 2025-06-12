@@ -1,0 +1,43 @@
+{
+  "header": {
+    "login": "Log In / Sign Up",
+    "schedule": "Schedule",
+    "tictoc": "TicToc"
+  },
+  "userNav": {
+    "wishlist": "Wishlist",
+    "mypage": "My Page",
+    "language": "Select Language"
+  },
+  "language": {
+    "ko": "한국어",
+    "en": "English",
+    "zh": "中文",
+    "ja": "日本語"
+  },
+  "search": {
+    "placeholder": "Search...",
+    "recentSearch": "Recent Searches",
+    "dummy": {
+      "item1": "Popular Product",
+      "item2": "New Recipe",
+      "item3": "Today's Makeup"
+    }
+  },
+  "footer": {
+    "company": "DAMOA",
+    "description": "We provide a new shopping experience as the best live commerce platform.",
+    "support": "Customer Center: 1234-5678 (Mon–Fri 09:00–18:00)",
+    "section": {
+      "shop": "Shop",
+      "support": "Support",
+      "mypage": "My Page",
+      "follow": "Follow"
+    },
+    "shopList": ["Best", "New Arrivals", "Events", "Live"],
+    "supportList": ["FAQ", "1:1 Inquiry", "Announcements", "Terms of Service"],
+    "mypageList": ["Order Tracking", "Shipping Status", "Cancel/Return", "Coupons/Points"],
+    "followList": ["Nahyeongjin", "Yunyounghak", "Johyunyeol", "Cheongaon"],
+    "copyright": "© 2023 DAMOA. All rights reserved."
+  }
+}

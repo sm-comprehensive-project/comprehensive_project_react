@@ -7,10 +7,8 @@ import {
   Card,
   CardMedia,
   Chip,
-  IconButton,
   Button,
 } from "@mui/material";
-import { Heart, Star } from "lucide-react";
 import type { ProductItem } from "./WatchPage.tsx";
 
 interface ProductListProps {
@@ -18,6 +16,35 @@ interface ProductListProps {
 }
 
 export default function ProductList({ products }: ProductListProps) {
+  // 클릭 이벤트 전송 (구매 버튼 클릭)
+  const sendClickEvent = async (
+    productName: string,
+    thumbnail: string,
+    link: string
+  ) => {
+    const stored = sessionStorage.getItem("user");
+    if (!stored) return;
+    try {
+      const parsed = JSON.parse(stored);
+      const email: string = parsed.email;
+      await fetch("/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: email,
+          type: "CLICKED",
+          data: {
+            ItemId: productName,
+            thumbnail: thumbnail,
+            link: link,
+          },
+        }),
+      });
+    } catch (err) {
+      console.error("클릭 이벤트 전송 오류:", err);
+    }
+  };
+
   return (
     <Card
       sx={{
@@ -56,7 +83,8 @@ export default function ProductList({ products }: ProductListProps) {
             key={`product-${index}`}
             sx={{
               p: 2,
-              borderBottom: index < products.length - 1 ? "1px solid #f0f0f0" : "none",
+              borderBottom:
+                index < products.length - 1 ? "1px solid #f0f0f0" : "none",
               transition: "all 0.2s ease",
               "&:hover": {
                 backgroundColor: "rgba(0,0,0,0.02)",
@@ -81,7 +109,7 @@ export default function ProductList({ products }: ProductListProps) {
               }}
             >
               <Chip
-                label={`${product.discountRate}% OFF`}
+                label={`할인율 ${product.discountRate}%`}
                 size="small"
                 sx={{
                   backgroundColor: "#38A169",
@@ -151,14 +179,9 @@ export default function ProductList({ products }: ProductListProps) {
                   {product.price_origin.toLocaleString()}원
                 </Typography>
               </Box>
-
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Star size={16} style={{ color: "#FFB400", marginRight: 6 }} />
-                <Typography variant="body2">4.8</Typography>
-              </Box>
             </Box>
 
-            {/* 액션 버튼 */}
+            {/* 구매하기 버튼 */}
             <Box
               sx={{
                 display: "flex",
@@ -167,25 +190,7 @@ export default function ProductList({ products }: ProductListProps) {
                 alignItems: "center",
               }}
             >
-              <IconButton
-                size="small"
-                sx={{
-                  color: "#666",
-                  backgroundColor: "#f5f5f5",
-                  width: 40,
-                  height: 40,
-                  "&:hover": {
-                    backgroundColor: "#e0e0e0",
-                    color: "#f44336",
-                  },
-                }}
-              >
-                <Heart size={20} />
-              </IconButton>
               <Button
-                component="a"
-                href={product.link}
-                target="_blank"
                 variant="contained"
                 size="small"
                 sx={{
@@ -197,8 +202,16 @@ export default function ProductList({ products }: ProductListProps) {
                   fontWeight: "bold",
                   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                 }}
+                onClick={async () => {
+                  await sendClickEvent(
+                    product.name,
+                    product.image,
+                    product.link
+                  );
+                  window.location.href = product.link;
+                }}
               >
-                구매하기
+                구매하러 가기
               </Button>
             </Box>
           </Box>

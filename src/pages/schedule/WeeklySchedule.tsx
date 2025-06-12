@@ -28,15 +28,16 @@ import { Link } from "react-router-dom";
 type ScheduleCardItem = {
   id: number;
   title: string;
-  time: string; // ex. "13:30"
-  date: string; // ex. "2025-06-04"
+  time: string;         // ex. "13:30"
+  date: string;         // ex. "2025-06-04"
   channel: string;
-  thumbnail?: string; // 썸네일이 없을 수 있으므로 옵셔널로 변경
+  thumbnail?: string;
   isNew: boolean;
   category: string;
   platform: "kakao" | "naver";
   liveId: string;
-  liveUrl: string; // “방송 보러 가기” 시 사용할 URL (WatchPage에서 처리)
+  liveUrl: string;
+  routeId: string;      // ← watch 라우트용 ID
 };
 
 type LiveApiResponseItem = {
@@ -55,46 +56,48 @@ type LiveApiResponseItem = {
     image: string;
   };
   seller?: string;
-  dates: string[]; // 날짜 문자열 배열 (ISO)
+  dates: string[];
 };
 
-// 카카오 기본 썸네일(실제로는 “이미지 없음”과 동일하게 처리)
+// 카카오 기본 썸네일(“이미지 없음”과 동일 처리)
 const FALLBACK_THUMBNAIL =
   "https://st.kakaocdn.net/commerce_ui/static/common_module/default_fallback_thumbnail.png";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 날짜를 “6월 4일 (수)” 형식으로 바꿔주는 유틸
+// 날짜 “6월 4일 (수)” 형식 유틸
 const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
+  const d = new Date(dateString);
   const days = ["일", "월", "화", "수", "목", "금", "토"];
-  return `${date.getMonth() + 1}월 ${date.getDate()}일 (${days[date.getDay()]})`;
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
 };
 
-// 5일치(어제, 오늘, 내일, …) 날짜 배열 생성
+// 5일치(어제, 오늘, 내일, …) 날짜 배열
 const generateDateRange = () =>
   Array.from({ length: 5 }, (_, i) =>
     dayjs().add(i - 1, "day").format("YYYY-MM-DD")
   );
 
-// 오늘인 경우 “오늘” 표시
+// 오늘 라벨
 const getDateLabel = (dateString: string) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const date = new Date(dateString);
-  date.setHours(0, 0, 0, 0);
-  return date.getTime() === today.getTime() ? "오늘" : "";
+  const target = new Date(dateString);
+  target.setHours(0, 0, 0, 0);
+  return target.getTime() === today.getTime() ? "오늘" : "";
 };
 
-// 방송이 시작되었는지 여부 판단 (현재 시간이 “날짜+시간”보다 이후인지)
+// 어제 판단 유틸
+const isYesterday = (dateString: string) =>
+  dayjs(dateString).isSame(dayjs().subtract(1, "day"), "day");
+
+// 방송 시작 여부 판단
 const isStarted = (item: ScheduleCardItem) =>
   dayjs(`${item.date}T${item.time}`).isBefore(dayjs());
-// ─────────────────────────────────────────────────────────────────────────────
 
 const SchedulePage: React.FC = () => {
   const dateRange = generateDateRange();
   const today = dayjs().format("YYYY-MM-DD");
 
-  // ─── 상태값 정의 ─────────────────────────────────────────────────────────────
+  // ─── 상태값 ───────────────────────────────────────────────────────────────
   const [selectedDate, setSelectedDate] = useState(today);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [platformFilter, setPlatformFilter] = useState<
@@ -107,42 +110,76 @@ const SchedulePage: React.FC = () => {
   const [naverScheduleData, setNaverScheduleData] = useState<
     ScheduleCardItem[]
   >([]);
-
   const [likedIds, setLikedIds] = useState<string[]>([]);
-  const [loadingSchedules, setLoadingSchedules] = useState<boolean>(false);
-  // ─────────────────────────────────────────────────────────────────────────────
+  const [loadingSchedules, setLoadingSchedules] = useState(false);
+  // ───────────────────────────────────────────────────────────────────────────
 
-  // ─── API 응답을 ScheduleCardItem 형태로 바꿔주는 함수 ─────────────────────────────
+  // ─── 이벤트 전송 헬퍼 ─────────────────────────────────────────────────────
+  const postEvent = async (
+    userId: string,
+    type:
+      | "LIKED_LIVE"
+      | "WATCHED"
+      | "CLICKED"
+      | "CATEGORY_INTEREST"
+      | "SEARCH",
+    data: Record<string, unknown>
+  ) => {
+    try {
+      await fetch("/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, type, data }),
+      });
+    } catch (err) {
+      console.error("이벤트 전송 실패:", err);
+    }
+  };
+  // ───────────────────────────────────────────────────────────────────────────
+
+  // ─── API 응답 → ScheduleCardItem 변환 (routeId 파싱 포함) ─────────────────────
   const transformData = (
     items: LiveApiResponseItem[],
     platform: "kakao" | "naver"
-  ) =>
-    items.map((item, index) => {
+  ): ScheduleCardItem[] =>
+    items.map((item, idx) => {
       const dateStr = item.dates?.[0] || new Date().toISOString();
-      const date = new Date(dateStr);
-
-      // fallback URL과 동일하면 undefined로 간주
+      const dateObj = new Date(dateStr);
       const rawThumb = item.thumbnail;
       const thumbnail =
         rawThumb && rawThumb !== FALLBACK_THUMBNAIL ? rawThumb : undefined;
 
+      // URL 파싱으로 routeId 추출
+      let routeId = "";
+      try {
+        const url = new URL(item.liveUrl);
+        if (platform === "kakao") {
+          routeId = url.pathname.split("/live/")[1] || "";
+        } else {
+          routeId = url.pathname.split("/replays/")[1] || "";
+        }
+      } catch {
+        routeId = item.liveId;
+      }
+
       return {
-        id: index,
+        id: idx,
         title: item.title,
-        time: dayjs(date).format("HH:mm"),
-        date: dayjs(date).format("YYYY-MM-DD"),
-        channel: item.seller ?? item.sellerInfo?.name ?? "알 수 없음",
-        thumbnail, // 이제 undefined일 수도 있음
-        isNew: index < 3,
+        time: dayjs(dateObj).format("HH:mm"),
+        date: dayjs(dateObj).format("YYYY-MM-DD"),
+        channel: item.seller ?? item.sellerInfo.name,
+        thumbnail,
+        isNew: idx < 3,
         category: "기타",
         platform,
         liveId: item.liveId || item.id,
-        liveUrl: item.liveUrl, // 외부 URL은 WatchPage 내에서 실제 사용
+        liveUrl: item.liveUrl,
+        routeId,
       };
     });
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────────────────────
 
-  // ─── 스케줄 데이터 & 찜 목록 불러오기 ───────────────────────────────────────────
+  // ─── 데이터 로딩 ───────────────────────────────────────────────────────────
   const fetchData = async () => {
     setLoadingSchedules(true);
     try {
@@ -150,13 +187,12 @@ const SchedulePage: React.FC = () => {
         fetch("http://localhost:8088/damoa/schedule/kakao"),
         fetch("http://localhost:8088/damoa/schedule/naver"),
       ]);
-      const [kakaoData, naverData] = await Promise.all([
+      const [kakaoJson, naverJson] = await Promise.all([
         kakaoRes.json(),
         naverRes.json(),
       ]);
-
-      setKakaoScheduleData(transformData(kakaoData, "kakao"));
-      setNaverScheduleData(transformData(naverData, "naver"));
+      setKakaoScheduleData(transformData(kakaoJson, "kakao"));
+      setNaverScheduleData(transformData(naverJson, "naver"));
     } catch (err) {
       console.error("스케줄 데이터 불러오기 실패:", err);
     } finally {
@@ -169,88 +205,64 @@ const SchedulePage: React.FC = () => {
       const res = await fetch(
         `http://localhost:8088/api/user/likes?email=${email}`
       );
-      const result = await res.json();
-
-      if (result.success && Array.isArray(result.liked)) {
-        setLikedIds(result.liked.map((id: unknown) => String(id)));
-      } else {
-        setLikedIds([]);
+      const json = await res.json();
+      if (json.success && Array.isArray(json.liked)) {
+        setLikedIds(json.liked.map((id: unknown) => String(id)));
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
       setLikedIds([]);
     }
   };
 
   useEffect(() => {
     fetchData();
-    const storedUser = sessionStorage.getItem("user");
-    if (storedUser) {
+    const stored = sessionStorage.getItem("user");
+    if (stored) {
       try {
-        const user = JSON.parse(storedUser);
-        if (user?.email) fetchLikes(user.email);
-      } catch (err) {
-        console.error("세션 파싱 실패:", err);
-      }
+        const u = JSON.parse(stored);
+        if (u.email) fetchLikes(u.email);
+      } catch {}
     }
   }, []);
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────────────────────
 
-  // ─── 찜 토글 함수 ─────────────────────────────────────────────────────────────
+  // ─── 찜 토글 함수 ───────────────────────────────────────────────────────────
   const handleLikeToggle = async (liveId: string) => {
-    const storedUser = sessionStorage.getItem("user");
-    if (!storedUser) {
+    const stored = sessionStorage.getItem("user");
+    if (!stored) {
       alert("로그인이 필요합니다.");
       return;
     }
-
-    let email = "";
-    try {
-      const user = JSON.parse(storedUser);
-      email = user?.email;
-    } catch {
-      return;
-    }
-
-    const isLiked = likedIds.includes(liveId);
-    const url = `http://localhost:8088/api/user/like/${liveId}?email=${email}`;
-
-    try {
-      const res = await fetch(url, {
-        method: isLiked ? "DELETE" : "POST",
-      });
-      const result = await res.json().catch(() => ({}));
-
-      if (res.ok && result.success !== false) {
-        setLikedIds((prev) =>
-          isLiked ? prev.filter((id) => id !== liveId) : [...prev, liveId]
-        );
-      }
-    } catch {}
+    const { email } = JSON.parse(stored);
+    await postEvent(email, "LIKED_LIVE", { ObjectId: liveId });
+    setLikedIds((prev) =>
+      prev.includes(liveId)
+        ? prev.filter((id) => id !== liveId)
+        : [...prev, liveId]
+    );
   };
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────────────────────
 
-  // ─── 플랫폼 필터 & 날짜별 그룹핑 ───────────────────────────────────────────────
-  const filteredScheduleData = useMemo(() => {
-    let combined = [...kakaoScheduleData, ...naverScheduleData];
-    if (platformFilter !== "all") {
-      combined = combined.filter((item) => item.platform === platformFilter);
-    }
-    return combined;
-  }, [platformFilter, kakaoScheduleData, naverScheduleData]);
+  // ─── 플랫폼 필터 & 날짜별 그룹핑 ───────────────────────────────────────────
+  const filtered = useMemo(() => {
+    const all = [...kakaoScheduleData, ...naverScheduleData];
+    return platformFilter === "all"
+      ? all
+      : all.filter((i) => i.platform === platformFilter);
+  }, [kakaoScheduleData, naverScheduleData, platformFilter]);
 
-  const groupedSchedule = useMemo(() => {
-    const grouped: Record<string, ScheduleCardItem[]> = {};
-    filteredScheduleData.forEach((item) => {
-      if (!grouped[item.date]) grouped[item.date] = [];
-      grouped[item.date].push(item);
+  const grouped = useMemo(() => {
+    const map: Record<string, ScheduleCardItem[]> = {};
+    filtered.forEach((i) => {
+      if (!map[i.date]) map[i.date] = [];
+      map[i.date].push(i);
     });
-    Object.keys(grouped).forEach((date) => {
-      grouped[date].sort((a, b) => a.time.localeCompare(b.time));
-    });
-    return grouped;
-  }, [filteredScheduleData]);
-  // ─────────────────────────────────────────────────────────────────────────────
+    Object.values(map).forEach((arr) =>
+      arr.sort((a, b) => a.time.localeCompare(b.time))
+    );
+    return map;
+  }, [filtered]);
+  // ───────────────────────────────────────────────────────────────────────────
 
   return (
     <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
@@ -275,7 +287,7 @@ const SchedulePage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* ── 필터, 뷰 모드, 날짜 선택 탭 ── */}
+      {/* ── 필터 · 뷰 모드 · 날짜 탭 ── */}
       <Box sx={{ maxWidth: 1200, mx: "auto", px: 2, py: 3 }}>
         <Box
           sx={{
@@ -323,31 +335,23 @@ const SchedulePage: React.FC = () => {
               <Tab
                 key={date}
                 value={date}
-                label={`${getDateLabel(date) ? "오늘 " : ""}${formatDate(
-                  date
-                )}`}
+                label={`${getDateLabel(date)} ${formatDate(date)}`}
               />
             ))}
           </Tabs>
         </Box>
 
-        {/* ── 선택된 날짜의 방송 리스트/카드 영역 ── */}
+        {/* ── 선택된 날짜의 방송 리스트/카드 ── */}
         <Box sx={{ background: "#fff", borderRadius: 2, p: 3 }}>
-          <Typography
-            variant="h6"
-            color="#3f51b5"
-            fontWeight={600}
-            mb={2}
-          >
-            {getDateLabel(selectedDate)} 방송 일정 (
-            {formatDate(selectedDate)})
+          <Typography variant="h6" color="#3f51b5" fontWeight={600} mb={2}>
+            {getDateLabel(selectedDate)} 방송 일정 ({formatDate(selectedDate)})
           </Typography>
 
           {loadingSchedules ? (
             <Box sx={{ textAlign: "center", py: 6 }}>
               <CircularProgress size={24} />
             </Box>
-          ) : (groupedSchedule[selectedDate] || []).length === 0 ? (
+          ) : (grouped[selectedDate] || []).length === 0 ? (
             <Box sx={{ textAlign: "center", py: 6 }}>
               <Typography color="text.secondary">
                 해당 날짜에 방송 일정이 없습니다.
@@ -370,9 +374,9 @@ const SchedulePage: React.FC = () => {
                 gap: 2,
               }}
             >
-              {(groupedSchedule[selectedDate] || []).map((item) =>
+              {(grouped[selectedDate] || []).map((item) =>
                 viewMode === "list" ? (
-                  // ─── 리스트형 UI ─────────────────────────────────
+                  // ── 리스트형 UI ──
                   <Box
                     key={item.id}
                     sx={{
@@ -385,20 +389,15 @@ const SchedulePage: React.FC = () => {
                       position: "relative",
                       overflow: "hidden",
                       opacity: isStarted(item) ? 1 : 0.5,
-                      filter: isStarted(item)
-                        ? "none"
-                        : "grayscale(70%)",
+                      filter: isStarted(item) ? "none" : "grayscale(70%)",
                     }}
                   >
-                    {/* ── 왼쪽: 썸네일 (160px 고정) ── */}
+                    {/* ── 썸네일 ── */}
                     <Box
                       sx={{
                         width: 160,
                         height: 90,
-                        borderRadius: 1,
-                        backgroundColor: item.thumbnail
-                          ? "transparent"
-                          : "#ddd", // 썸네일이 없으면 회색 박스
+                        backgroundColor: item.thumbnail ? "transparent" : "#ddd",
                         backgroundImage: item.thumbnail
                           ? `url(${item.thumbnail})`
                           : "none",
@@ -413,11 +412,9 @@ const SchedulePage: React.FC = () => {
                         fontSize: "0.8rem",
                       }}
                     >
-                      {/* 썸네일이 없을 때 “이미지 없음” 표시 */}
-                      {!item.thumbnail && <>이미지 없음</>}
-
-                      {/* 방송 전: 큰 시간 오버레이 */}
-                      {!isStarted(item) && item.thumbnail && (
+                      {!item.thumbnail && "이미지 없음"}
+                      {/* 어제/미래 오버레이 */}
+                      {(isYesterday(item.date) || !isStarted(item)) && item.thumbnail && (
                         <Box
                           sx={{
                             position: "absolute",
@@ -438,13 +435,14 @@ const SchedulePage: React.FC = () => {
                               textOverflow: "ellipsis",
                             }}
                           >
-                            {item.time} 방송 시작
+                            {isYesterday(item.date)
+                              ? "방송 종료"
+                              : `${item.time} 방송 시작`}
                           </Typography>
                         </Box>
                       )}
-
-                      {/* 방송 중: 작은 LIVE 뱃지 */}
-                      {isStarted(item) && item.thumbnail && (
+                      {/* LIVE 뱃지 (어제 제외) */}
+                      {!isYesterday(item.date) && isStarted(item) && item.thumbnail && (
                         <Box
                           sx={{
                             position: "absolute",
@@ -463,7 +461,6 @@ const SchedulePage: React.FC = () => {
                           LIVE
                         </Box>
                       )}
-
                       {/* 플랫폼 뱃지 */}
                       {item.thumbnail && (
                         <Box
@@ -472,9 +469,7 @@ const SchedulePage: React.FC = () => {
                             top: 4,
                             left: 4,
                             backgroundColor:
-                              item.platform === "kakao"
-                                ? "#FEE500"
-                                : "#03C75A",
+                              item.platform === "kakao" ? "#FEE500" : "#03C75A",
                             color: "#000",
                             fontWeight: "bold",
                             fontSize: "0.7rem",
@@ -488,7 +483,7 @@ const SchedulePage: React.FC = () => {
                       )}
                     </Box>
 
-                    {/* ── 중간: 방송 정보 (flex:1) ── */}
+                    {/* ── 방송 정보 ── */}
                     <Box
                       sx={{
                         flex: 1,
@@ -519,14 +514,17 @@ const SchedulePage: React.FC = () => {
                         <Tv size={14} />
                         <Typography
                           variant="body2"
-                          sx={{ fontSize: "0.75rem", color: "#666" }}
+                          sx={{
+                            fontSize: "0.75rem",
+                            color: "#666",
+                          }}
                         >
                           {item.channel}
                         </Typography>
                       </Box>
                     </Box>
 
-                    {/* ── 오른쪽: 찜 버튼 + 방송 보러 가기 버튼(세로 정렬) ── */}
+                    {/* ── 액션 버튼 ── */}
                     <Box
                       sx={{
                         display: "flex",
@@ -536,7 +534,6 @@ const SchedulePage: React.FC = () => {
                         gap: 1,
                       }}
                     >
-                      {/* 찜 버튼: 좋아요 상태에 따라 하트 채워짐 */}
                       <IconButton onClick={() => handleLikeToggle(item.liveId)}>
                         {likedIds.includes(item.liveId) ? (
                           <HeartFilled fill="#e53935" stroke="none" />
@@ -545,11 +542,10 @@ const SchedulePage: React.FC = () => {
                         )}
                       </IconButton>
 
-                      {/* 방송 중일 때만 “방송 보러 가기” 표시 */}
                       {isStarted(item) && (
                         <Button
                           component={Link}
-                          to={`/watch/${item.liveId}`} // ← 내부 라우트로 이동
+                          to={`/watch/${item.routeId || item.liveId}`}
                           variant="outlined"
                           size="small"
                           sx={{
@@ -557,9 +553,6 @@ const SchedulePage: React.FC = () => {
                             fontSize: "0.8rem",
                             borderColor: "#3f51b5",
                             color: "#3f51b5",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
                             "&:hover": {
                               backgroundColor: "#3f51b5",
                               color: "#fff",
@@ -572,7 +565,7 @@ const SchedulePage: React.FC = () => {
                     </Box>
                   </Box>
                 ) : (
-                  // ─── 카드형 UI ───────────────────────────────────────────────
+                  // ── 카드형 UI ──
                   <Card
                     key={item.id}
                     sx={{
@@ -583,16 +576,12 @@ const SchedulePage: React.FC = () => {
                       transition: "all 0.2s",
                       opacity: isStarted(item) ? 1 : 0.5,
                       filter: isStarted(item) ? "none" : "grayscale(70%)",
-                      "&:hover": {
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                        transform: "translateY(-2px)",
-                      },
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
                     }}
                   >
-                    {/* ── 이미지 & 오버레이 ── */}
+                    {/* 이미지 & 오버레이 */}
                     <Box sx={{ position: "relative" }}>
                       {item.thumbnail ? (
                         <CardMedia
@@ -605,7 +594,6 @@ const SchedulePage: React.FC = () => {
                           }}
                         />
                       ) : (
-                        // 썸네일이 없을 때 회색 배경 & “이미지 없음” 텍스트
                         <Box
                           sx={{
                             height: 160,
@@ -620,8 +608,8 @@ const SchedulePage: React.FC = () => {
                         </Box>
                       )}
 
-                      {/* 방송 전: 큰 시간 오버레이 */}
-                      {!isStarted(item) && item.thumbnail && (
+                      {/* 어제/미래 오버레이 */}
+                      {(isYesterday(item.date) || !isStarted(item)) && item.thumbnail && (
                         <Box
                           sx={{
                             position: "absolute",
@@ -642,13 +630,15 @@ const SchedulePage: React.FC = () => {
                               textOverflow: "ellipsis",
                             }}
                           >
-                            {item.time} 방송 시작
+                            {isYesterday(item.date)
+                              ? "방송 종료"
+                              : `${item.time} 방송 시작`}
                           </Typography>
                         </Box>
                       )}
 
-                      {/* 방송 중: 작은 LIVE 뱃지 */}
-                      {isStarted(item) && item.thumbnail && (
+                      {/* LIVE 뱃지 (어제 제외) */}
+                      {!isYesterday(item.date) && isStarted(item) && item.thumbnail && (
                         <Box
                           sx={{
                             position: "absolute",
@@ -690,13 +680,16 @@ const SchedulePage: React.FC = () => {
                       )}
                     </Box>
 
-                    {/* ── 카드 콘텐츠 ── */}
+                    {/* 카드 콘텐츠 */}
                     <CardContent sx={{ p: 1.5 }}>
                       <Typography
                         fontWeight={600}
                         fontSize="0.9rem"
                         noWrap
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
+                        sx={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
                       >
                         {item.title}
                       </Typography>
@@ -708,11 +701,20 @@ const SchedulePage: React.FC = () => {
                           mt: 0.5,
                         }}
                       >
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                          }}
+                        >
                           <Tv size={14} />
                           <Typography
                             variant="body2"
-                            sx={{ fontSize: "0.75rem", color: "#666" }}
+                            sx={{
+                              fontSize: "0.75rem",
+                              color: "#666",
+                            }}
                           >
                             {item.channel}
                           </Typography>
@@ -727,12 +729,12 @@ const SchedulePage: React.FC = () => {
                       </Box>
                     </CardContent>
 
-                    {/* ── 방송 중일 때만: 방송 보러 가기 버튼 ── */}
+                    {/* 방송 중일 때만: 방송 보러 가기 */}
                     {isStarted(item) && (
                       <Box sx={{ px: 1, py: 1 }}>
                         <Button
                           component={Link}
-                          to={`/watch/${item.liveId}`} // ← 내부 라우트로 이동
+                          to={`/watch/${item.routeId || item.liveId}`}
                           variant="outlined"
                           size="small"
                           fullWidth
@@ -741,9 +743,6 @@ const SchedulePage: React.FC = () => {
                             fontSize: "0.8rem",
                             borderColor: "#3f51b5",
                             color: "#3f51b5",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
                             "&:hover": {
                               backgroundColor: "#3f51b5",
                               color: "#fff",

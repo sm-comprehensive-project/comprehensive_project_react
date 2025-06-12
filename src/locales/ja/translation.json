@@ -1,0 +1,43 @@
+{
+  "header": {
+    "login": "ログイン / 会員登録",
+    "schedule": "番組表",
+    "tictoc": "TikTok"
+  },
+  "userNav": {
+    "wishlist": "ウィッシュリスト",
+    "mypage": "マイページ",
+    "language": "言語選択"
+  },
+  "language": {
+    "ko": "한국어",
+    "en": "English",
+    "zh": "中文",
+    "ja": "日本語"
+  },
+  "search": {
+    "placeholder": "検索ワードを入力...",
+    "recentSearch": "最近の検索ワード",
+    "dummy": {
+      "item1": "人気商品",
+      "item2": "新しいレシピ",
+      "item3": "今日のメイク"
+    }
+  },
+  "footer": {
+    "company": "DAMOA",
+    "description": "最高のライブコマースプラットフォームとして、新しいショッピング体験を提供します。",
+    "support": "カスタマーセンター：1234-5678 (平日 09:00–18:00)",
+    "section": {
+      "shop": "ショッピング",
+      "support": "サポート",
+      "mypage": "マイページ",
+      "follow": "フォロー"
+    },
+    "shopList": ["ベスト", "新着", "イベント", "ライブ"],
+    "supportList": ["よくある質問", "1:1 お問い合わせ", "お知らせ", "利用規約"],
+    "mypageList": ["注文照会", "配送照会", "キャンセル/返品", "クーポン/ポイント"],
+    "followList": ["山田太郎", "佐藤花子", "鈴木次郎", "高橋愛"],
+    "copyright": "© 2023 DAMOA. All rights reserved."
+  }
+}

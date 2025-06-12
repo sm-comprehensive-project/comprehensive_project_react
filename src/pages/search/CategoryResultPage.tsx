@@ -1,18 +1,15 @@
-// src/pages/Search/CategoryResultPage.tsx
+// 파일 경로: src/pages/search/CategoryResultPage.tsx
+
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  CardMedia,
-  Chip,
-  Tabs,
-  Tab,
-  CircularProgress,
-  Button,
-} from "@mui/material";
+import { Box, Typography, CircularProgress } from "@mui/material";
+
+import ResultHeader, {
+  PlatformFilter,
+} from "../../components/search/ResultHeader";
+import BroadcastGroupCard, {
+  ProductItem,
+} from "../../components/search/BroadcastGroupCard";
 
 // --- API 응답 타입 정의 (방송 + 상품) ---
 interface ApiProduct {
@@ -34,40 +31,44 @@ interface ApiLiveResponseItem {
   products: ApiProduct[];
 }
 
-// --- 화면용, 방송별 상품 묶음을 나타낼 타입 ---
+// --- 화면용, 방송별 상품 묶음(컴포넌트에 넘길 형태) 타입 ---
 interface BroadcastGroup {
   liveId: string;
   title: string;
   thumbnail: string;
   platform: "kakao" | "naver";
   sellerName: string;
-  products: {
-    name: string;
-    image: string;
-    link: string;
-    price: number;
-    priceOrigin: number;
-    discountRate: number;
-  }[];
+  products: ProductItem[];
 }
-
-// 플랫폼 필터 타입
-type PlatformFilter = "all" | "kakao" | "naver";
 
 const CategoryResultPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const category = searchParams.get("category") || "";
 
-  // 1) API 응답 데이터
+  // 1) API 응답 원본 데이터
   const [apiData, setApiData] = useState<ApiLiveResponseItem[]>([]);
-  // 2) 방송별로 묶은 그룹 목록
+  // 2) BroadcastGroup 형태로 가공한 데이터
   const [groups, setGroups] = useState<BroadcastGroup[]>([]);
   // 3) 플랫폼 필터
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all");
   // 4) 로딩 상태
   const [loading, setLoading] = useState<boolean>(false);
 
-  // 플랫폼 필터링된 그룹 (방송 단위 필터링)
+  // 사용자 이메일 가져오기 (sessionStorage)
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  useEffect(() => {
+    const stored = sessionStorage.getItem("user");
+    if (stored) {
+      try {
+        const u = JSON.parse(stored);
+        if (u.email) setUserEmail(u.email);
+      } catch {
+        setUserEmail(null);
+      }
+    }
+  }, []);
+
+  // 플랫폼 필터링된 그룹 (라이브 ID 단위)
   const filteredGroups = groups.filter((g) =>
     platformFilter === "all" ? true : g.platform === platformFilter
   );
@@ -81,7 +82,7 @@ const CategoryResultPage: React.FC = () => {
     console.log("✅ filteredGroups 개수:", filteredGroups.length);
   }, [category, apiData, groups, platformFilter, filteredGroups]);
 
-  // 카테고리 바뀔 때마다 fetch
+  //  카테고리 바뀔 때마다 fetch 수행
   useEffect(() => {
     if (!category) return;
 
@@ -90,17 +91,18 @@ const CategoryResultPage: React.FC = () => {
       try {
         console.log("🛰 카테고리 방송 조회 시작:", category);
         const res = await fetch(
-          `http://localhost:8088/damoa/live?category=${encodeURIComponent(category)}`
+          `http://localhost:8088/damoa/live?category=${encodeURIComponent(
+            category
+          )}`
         );
         const jsonData: ApiLiveResponseItem[] = await res.json();
         setApiData(jsonData);
 
-        // 방송별로 상품 묶기
+        // 방송별 상품 묶기
         const mapByLive = new Map<string, BroadcastGroup>();
         jsonData.forEach((live) => {
           const sellerName = live.sellerInfo?.name || "알 수 없음";
 
-          // 아직 Map에 해당 방송이 없으면 새 항목 생성
           if (!mapByLive.has(live.liveId)) {
             mapByLive.set(live.liveId, {
               liveId: live.liveId,
@@ -112,7 +114,7 @@ const CategoryResultPage: React.FC = () => {
             });
           }
 
-          // 해당 방송 그룹에 상품 추가 (카테고리가 동일한 것만)
+          // 해당 방송 그룹에, 카테고리가 같은 상품만 추가
           const group = mapByLive.get(live.liveId)!;
           live.products.forEach((prod) => {
             if (prod.category === category) {
@@ -128,10 +130,11 @@ const CategoryResultPage: React.FC = () => {
           });
         });
 
-        // products 배열이 비어있는 그룹은 제외하고 리스트로 변환
-        const groupedList: BroadcastGroup[] = Array.from(mapByLive.values()).filter(
-          (g) => g.products.length > 0
-        );
+        // products 배열이 비어있는 그룹은 필터링
+        const groupedList: BroadcastGroup[] = Array.from(
+          mapByLive.values()
+        ).filter((g) => g.products.length > 0);
+
         setGroups(groupedList);
         console.log("📦 groupedList 생성:", groupedList);
       } catch (err) {
@@ -146,247 +149,80 @@ const CategoryResultPage: React.FC = () => {
     fetchByCategory();
   }, [category]);
 
+  // 클릭 이벤트 전송 함수 (상품 클릭 시 /events 호출)
+  const sendProductClickEvent = async (item: ProductItem) => {
+    if (!userEmail) return;
+    try {
+      await fetch("/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userEmail,
+          type: "CLICKED",
+          data: {
+            ItemId: item.name,
+            thumbnail: item.image,
+            link: item.link,
+          },
+        }),
+      });
+    } catch (err) {
+      console.error("클릭 이벤트 전송 오류:", err);
+    }
+  };
+
+  // 방송 보기 버튼 클릭 시, /watch/${liveId}로 이동
+  const handleWatchClick = (liveId: string) => {
+    window.location.href = `/watch/${liveId}`;
+  };
+
   return (
     <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
-      {/* 상단 헤더 */}
-      <Box
-        sx={{
-          background: "linear-gradient(160deg, #FF5722, #3f51b5)",
-          color: "#fff",
-          py: 4,
-        }}
-      >
-        <Box sx={{ maxWidth: 1200, mx: "auto", px: 2 }}>
-          {/* Breadcrumb */}
-          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-            <Typography variant="body2" sx={{ color: "#FFE0B2", mr: 0.5 }}>
-              홈
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#FFE0B2", mr: 0.5 }}>
-              &gt;
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#FFE0B2" }}>
-              카테고리 검색
-            </Typography>
-          </Box>
-
-          {/* 메인 제목 */}
-          <Typography variant="h4" fontWeight={700}>
-            🏷️ "{category}" 카테고리 방송 & 상품
-          </Typography>
-          <Typography variant="body1" mt={1}>
-            총 <strong>{groups.length}</strong>개 방송 (상품 포함)
-          </Typography>
-
-          {/* 플랫폼 필터 탭 */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "flex-start",
-              alignItems: "center",
-              mt: 2,
-            }}
-          >
-            <Tabs
-              value={platformFilter}
-              onChange={(_e, v: PlatformFilter) => setPlatformFilter(v)}
-              sx={{ bgcolor: "#fff", borderRadius: 1 }}
-            >
-              <Tab label="전체" value="all" />
-              <Tab label="Kakao" value="kakao" />
-              <Tab label="Naver" value="naver" />
-            </Tabs>
-          </Box>
-        </Box>
-      </Box>
+      {/* 상단 헤더 (ResultHeader) */}
+      <ResultHeader
+        title={`🏷️ "${category}" 카테고리 방송 & 상품`}
+        count={groups.length}
+        filter={platformFilter}
+        onFilterChange={(v) => setPlatformFilter(v)}
+        breadcrumb={["홈", "카테고리 검색"]}
+      />
 
       {/* 결과 영역 */}
       <Box sx={{ maxWidth: 1200, mx: "auto", px: 2, py: 4 }}>
         {loading ? (
           <Box sx={{ textAlign: "center", py: 4 }}>
-            <CircularProgress size={32} />
+            {/* ② 기존 스피너 */}
+            <CircularProgress size={52} /> 
+            {/* ① 로딩 문구 추가 */}
+            <Typography
+              variant="subtitle1"
+              color="text.secondary"
+              sx={{ mb: 2 }}
+            >
+              데이터를 불러오는 중입니다… 잠시만 기다려 주세요.
+            </Typography>
           </Box>
         ) : filteredGroups.length === 0 ? (
-          <Typography
-            variant="body1"
-            textAlign="center"
-            color="text.secondary"
-          >
+          <Typography variant="body1" textAlign="center" color="text.secondary">
             해당 카테고리에 방송 및 상품이 없습니다.
           </Typography>
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {filteredGroups.map((group) => (
-              <Box
+              <BroadcastGroupCard
                 key={group.liveId}
-                sx={{
-                  backgroundColor: "#fff",
-                  borderRadius: 2,
-                  p: 3,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                liveId={group.liveId}
+                title={group.title}
+                thumbnail={group.thumbnail}
+                platform={group.platform}
+                sellerName={group.sellerName}
+                products={group.products}
+                onProductClick={(item) => {
+                  sendProductClickEvent(item);
+                  window.open(item.link, "_blank");
                 }}
-              >
-                {/* 방송 헤더 */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    mb: 2,
-                    gap: 2,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 120,
-                      height: 80,
-                      backgroundImage: `url(${group.thumbnail})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                      borderRadius: 1,
-                      flexShrink: 0,
-                    }}
-                  />
-
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="h6" fontWeight={700} noWrap>
-                      {group.title}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="#666"
-                      sx={{ mt: 0.5 }}
-                      noWrap
-                    >
-                      판매자: {group.sellerName}
-                    </Typography>
-                  </Box>
-
-                  <Chip
-                    label={group.platform.toUpperCase()}
-                    size="medium"
-                    sx={{
-                      backgroundColor:
-                        group.platform === "kakao" ? "#FEE500" : "#03C75A",
-                      color: group.platform === "kakao" ? "#000" : "#fff",
-                      fontWeight: 600,
-                    }}
-                  />
-                </Box>
-
-                {/* 상품 그리드 */}
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: {
-                      xs: "1fr",
-                      sm: "repeat(2, 1fr)",
-                      md: "repeat(3, 1fr)",
-                      lg: "repeat(4, 1fr)",
-                    },
-                    gap: 2,
-                  }}
-                >
-                  {group.products.map((prod, idx) => (
-                    <Card
-                      key={`${group.liveId}-prod-${idx}`}
-                      sx={{
-                        borderRadius: 1.5,
-                        overflow: "hidden",
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                        transition: "all 0.2s",
-                        "&:hover": {
-                          boxShadow: "0 3px 10px rgba(0,0,0,0.12)",
-                          transform: "translateY(-2px)",
-                        },
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      {/* 상품 이미지 */}
-                      <CardMedia
-                        component="img"
-                        height="140"
-                        image={prod.image}
-                        alt={prod.name}
-                      />
-
-                      <CardContent sx={{ p: 1.5 }}>
-                        <Typography
-                          fontWeight={600}
-                          fontSize="0.9rem"
-                          noWrap
-                        >
-                          {prod.name}
-                        </Typography>
-
-                        <Box
-                          sx={{
-                            mt: 0.5,
-                            display: "flex",
-                            alignItems: "baseline",
-                            gap: 0.5,
-                          }}
-                        >
-                          <Typography
-                            fontWeight={700}
-                            color="#FF5722"
-                            fontSize="0.9rem"
-                          >
-                            {prod.price.toLocaleString()}원
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            color="#999"
-                            sx={{ textDecoration: "line-through" }}
-                          >
-                            {prod.priceOrigin.toLocaleString()}원
-                          </Typography>
-                        </Box>
-                        <Typography
-                          variant="caption"
-                          sx={{ color: "#388E3C" }}
-                        >
-                          할인 {prod.discountRate}% 
-                        </Typography>
-                      </CardContent>
-
-                      <Box sx={{ p: 1, pt: 0, display: "flex", gap: 1 }}>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          sx={{
-                            textTransform: "none",
-                            borderColor: "#3f51b5",
-                            color: "#3f51b5",
-                            fontSize: "0.8rem",
-                            flexGrow: 1,
-                            "&:hover": {
-                              backgroundColor: "#3f51b5",
-                              color: "#fff",
-                            },
-                          }}
-                          onClick={() => window.open(prod.link, "_blank")}
-                        >
-                          상품 보러가기
-                        </Button>
-                        <Button
-                          size="small"
-                          variant="text"
-                          sx={{
-                            textTransform: "none",
-                            color: "#555",
-                            fontSize: "0.8rem",
-                          }}
-                          onClick={() => window.open(`/watch/${group.liveId}`, "_blank")}
-                        >
-                          방송 보기
-                        </Button>
-                      </Box>
-                    </Card>
-                  ))}
-                </Box>
-              </Box>
+                onWatchClick={handleWatchClick}
+              />
             ))}
           </Box>
         )}
